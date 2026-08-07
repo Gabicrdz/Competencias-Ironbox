@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String // Aquí guardaremos la contraseña encriptada
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique // Principiantes, Scaled, Advance, RX
+  athletes Athlete[]
+  wods     Wod[]
+}
+
+model Athlete {
+  id         Int      @id @default(autoincrement())
+  fullName   String
+  boxName    String?  // Opcional, por si quieren poner a qué box representan
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  scores     Score[]
+}
+
+model Wod {
+  id          Int      @id @default(autoincrement())
+  name        String   // Ej: WOD 1, WOD 2
+  description String?
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  scores      Score[]
+}
+
+model Score {
+  id           Int      @id @default(autoincrement())
+  position     Int      // Posición en la que terminó el WOD
+  points       Int      // Puntos otorgados por esa posición
+  observations String?  // Para resolver empates o penalizaciones
+  athleteId    Int
+  athlete      Athlete  @relation(fields: [athleteId], references: [id])
+  wodId        Int
+  wod          Wod      @relation(fields: [wodId], references: [id])
+
+  @@unique([athleteId, wodId]) // Un atleta solo puede tener un puntaje por WOD
+}
