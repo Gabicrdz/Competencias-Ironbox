@@ -6,7 +6,7 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [athletes, setAthletes] = useState<any[]>([]);
   const [wods, setWods] = useState<any[]>([]);
-  const [scores, setScores] = useState<any[]>([]); // Nuevo estado para ver las puntuaciones
+  const [scores, setScores] = useState<any[]>([]);
 
   // Estados para los formularios
   const [athleteForm, setAthleteForm] = useState({ fullName: '', boxName: '', categoryId: '' });
@@ -15,7 +15,7 @@ export default function AdminPage() {
 
   const [mensaje, setMensaje] = useState('');
 
-  // Función para descargar toda la info fresca de la base de datos
+  // Función para descargar la info fresca de la base de datos
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories')
       .then(res => res.json())
@@ -33,7 +33,6 @@ export default function AdminPage() {
     fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json()).then(data => setScores(data)).catch(() => {});
   };
 
-  // Cargar datos al iniciar la página
   useEffect(() => {
     fetchData();
   }, []);
@@ -44,16 +43,12 @@ export default function AdminPage() {
     const res = await fetch('https://competencias-ironbox-api.onrender.com/athletes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        fullName: athleteForm.fullName, 
-        boxName: athleteForm.boxName, 
-        categoryId: Number(athleteForm.categoryId) 
-      })
+      body: JSON.stringify({ fullName: athleteForm.fullName, boxName: athleteForm.boxName, categoryId: Number(athleteForm.categoryId) })
     });
     if (res.ok) {
       setMensaje('¡Atleta registrado con éxito!');
       setAthleteForm({ fullName: '', boxName: '', categoryId: categories[0]?.id.toString() || '' });
-      fetchData(); // Refrescamos la lista inferior automáticamente
+      fetchData();
     } else {
       setMensaje('Error al registrar atleta');
     }
@@ -65,16 +60,12 @@ export default function AdminPage() {
     const res = await fetch('https://competencias-ironbox-api.onrender.com/wods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        name: wodForm.name, 
-        description: wodForm.description, 
-        categoryId: Number(wodForm.categoryId) 
-      })
+      body: JSON.stringify({ name: wodForm.name, description: wodForm.description, categoryId: Number(wodForm.categoryId) })
     });
     if (res.ok) {
       setMensaje('¡WOD creado con éxito!');
       setWodForm({ name: '', description: '', categoryId: categories[0]?.id.toString() || '' });
-      fetchData(); // Refrescamos la lista inferior automáticamente
+      fetchData();
     } else {
       setMensaje('Error al crear WOD');
     }
@@ -83,7 +74,6 @@ export default function AdminPage() {
   // 3. Cargar Puntuación
   const handleCreateScore = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const bodyData = {
       athleteId: Number(scoreForm.athleteId),
       wodId: Number(scoreForm.wodId),
@@ -101,10 +91,33 @@ export default function AdminPage() {
     if (res.ok) {
       setMensaje('¡Puntuación cargada con éxito!');
       setScoreForm({ athleteId: '', wodId: '', position: '', points: '', observations: '' });
-      fetchData(); // Refrescamos la lista inferior automáticamente
+      fetchData();
     } else {
       setMensaje('Error al cargar puntuación');
     }
+  };
+
+  // --- NUEVAS FUNCIONES PARA BORRAR ---
+
+  const handleDeleteAthlete = async (id: number) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este atleta?')) return;
+    const res = await fetch(`https://competencias-ironbox-api.onrender.com/athletes/${id}`, { method: 'DELETE' });
+    if (res.ok) { setMensaje('Atleta eliminado con éxito'); fetchData(); }
+    else { setMensaje('Error al eliminar el atleta'); }
+  };
+
+  const handleDeleteWod = async (id: number) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este WOD?')) return;
+    const res = await fetch(`https://competencias-ironbox-api.onrender.com/wods/${id}`, { method: 'DELETE' });
+    if (res.ok) { setMensaje('WOD eliminado con éxito'); fetchData(); }
+    else { setMensaje('Error al eliminar el WOD'); }
+  };
+
+  const handleDeleteScore = async (id: number) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta puntuación?')) return;
+    const res = await fetch(`https://competencias-ironbox-api.onrender.com/scores/${id}`, { method: 'DELETE' });
+    if (res.ok) { setMensaje('Puntuación eliminada con éxito'); fetchData(); }
+    else { setMensaje('Error al eliminar la puntuación'); }
   };
 
   return (
@@ -158,8 +171,8 @@ export default function AdminPage() {
                 {wods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
               <div className="flex gap-2">
-                <input type="number" className="p-2 bg-gray-700 rounded w-1/2 text-white" placeholder="Posición (Ej: 1)" value={scoreForm.position} onChange={e => setScoreForm({...scoreForm, position: e.target.value})} required />
-                <input type="number" className="p-2 bg-gray-700 rounded w-1/2 text-white" placeholder="Puntos (Ej: 100)" value={scoreForm.points} onChange={e => setScoreForm({...scoreForm, points: e.target.value})} required />
+                <input type="number" className="p-2 bg-gray-700 rounded w-1/2 text-white" placeholder="Posición" value={scoreForm.position} onChange={e => setScoreForm({...scoreForm, position: e.target.value})} required />
+                <input type="number" className="p-2 bg-gray-700 rounded w-1/2 text-white" placeholder="Puntos" value={scoreForm.points} onChange={e => setScoreForm({...scoreForm, points: e.target.value})} required />
               </div>
               <button type="submit" className="bg-blue-600 p-2 rounded font-bold hover:bg-blue-700 transition">Guardar Puntuación</button>
             </form>
@@ -168,7 +181,7 @@ export default function AdminPage() {
 
       <hr className="border-gray-700 mb-12" />
 
-      {/* NUEVOS RECUADROS: VISTAS DE DATOS CARGADOS */}
+      {/* RECUADROS CON BOTONES DE BORRAR */}
       <h2 className="text-2xl font-bold text-center mb-8 text-gray-300">Resumen de Datos Cargados</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -179,8 +192,11 @@ export default function AdminPage() {
           <ul className="flex flex-col gap-2">
             {athletes.map(a => (
               <li key={a.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
-                <span className="font-bold">{a.fullName}</span>
-                <span className="text-gray-400 text-xs text-right bg-gray-800 px-2 py-1 rounded">{a.boxName || 'Sin Box'}</span>
+                <div>
+                  <span className="font-bold text-white">{a.fullName}</span>
+                  <span className="text-gray-400 text-xs ml-2 bg-gray-800 px-2 py-1 rounded">{a.boxName || 'Sin Box'}</span>
+                </div>
+                <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
               </li>
             ))}
             {athletes.length === 0 && <p className="text-gray-500 text-sm text-center">No hay atletas cargados</p>}
@@ -192,9 +208,12 @@ export default function AdminPage() {
           <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏋️ WODs ({wods.length})</h3>
           <ul className="flex flex-col gap-2">
             {wods.map(w => (
-              <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex flex-col">
-                <strong className="text-white">{w.name}</strong> 
-                <span className="text-gray-400 text-xs mt-1">{w.description || 'Sin descripción'}</span>
+              <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
+                <div className="flex flex-col">
+                  <strong className="text-white">{w.name}</strong> 
+                  <span className="text-gray-400 text-xs mt-1">{w.description || 'Sin descripción'}</span>
+                </div>
+                <button onClick={() => handleDeleteWod(w.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
               </li>
             ))}
             {wods.length === 0 && <p className="text-gray-500 text-sm text-center">No hay WODs cargados</p>}
@@ -206,12 +225,15 @@ export default function AdminPage() {
           <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">📝 Puntuaciones ({scores.length})</h3>
           <ul className="flex flex-col gap-2">
             {scores.map(s => (
-              <li key={s.id} className="bg-gray-700 p-3 rounded text-sm">
-                <div className="font-bold text-green-400 mb-1">{s.athlete?.fullName || `Atleta Desconocido`}</div>
-                <div className="flex justify-between items-center text-xs text-gray-300">
-                  <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name || `WOD Desconocido`}</span>
-                  <span className="font-bold">Pos: {s.position} | Pts: {s.points}</span>
+              <li key={s.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-green-400 mb-1">{s.athlete?.fullName || `Atleta Desconocido`}</div>
+                  <div className="flex gap-2 items-center text-xs text-gray-300">
+                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name || `WOD Desconocido`}</span>
+                    <span className="font-bold">Pos: {s.position} | Pts: {s.points}</span>
+                  </div>
                 </div>
+                <button onClick={() => handleDeleteScore(s.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
               </li>
             ))}
             {scores.length === 0 && <p className="text-gray-500 text-sm text-center">No hay puntuaciones cargadas</p>}
