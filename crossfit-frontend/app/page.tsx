@@ -10,17 +10,17 @@ export default function LeaderboardPage() {
 
   // Cargar todos los datos necesarios al abrir la página
   useEffect(() => {
-    fetch('http://localhost:3000/athletes')
+    fetch('https://competencias-ironbox-api.onrender.com/athletes')
       .then(res => res.json())
       .then(data => setAthletes(data))
       .catch(() => {});
 
-    fetch('http://localhost:3000/wods')
+    fetch('https://competencias-ironbox-api.onrender.com/wods')
       .then(res => res.json())
       .then(data => setWods(data))
       .catch(() => {});
 
-    fetch('http://localhost:3000/scores')
+    fetch('https://competencias-ironbox-api.onrender.com/scores')
       .then(res => res.json())
       .then(data => setScores(data))
       .catch(() => {});

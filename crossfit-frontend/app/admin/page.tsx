@@ -17,7 +17,7 @@ export default function AdminPage() {
   // Cargar categorías, atletas y wods al iniciar la página
   useEffect(() => {
     // Endpoint para obtener las categorías
-    fetch('http://localhost:3000/categories')
+    fetch('https://competencias-ironbox-api.onrender.com/categories')
       .then(res => res.json())
       .then(data => {
         setCategories(data);
@@ -29,14 +29,14 @@ export default function AdminPage() {
       })
       .catch(() => {});
 
-    fetch('http://localhost:3000/athletes').then(res => res.json()).then(data => setAthletes(data)).catch(() => {});
-    fetch('http://localhost:3000/wods').then(res => res.json()).then(data => setWods(data)).catch(() => {});
+    fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()).then(data => setAthletes(data)).catch(() => {});
+    fetch('https://competencias-ironbox-api.onrender.com/wods').then(res => res.json()).then(data => setWods(data)).catch(() => {});
   }, []);
 
   // 1. Registrar Atleta
   const handleCreateAthlete = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('http://localhost:3000/athletes', {
+    const res = await fetch('https://competencias-ironbox-api.onrender.com/athletes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -56,7 +56,7 @@ export default function AdminPage() {
   // 2. Crear WOD
   const handleCreateWod = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('http://localhost:3000/wods', {
+    const res = await fetch('https://competencias-ironbox-api.onrender.com/wods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -85,7 +85,7 @@ export default function AdminPage() {
       observations: scoreForm.observations || undefined,
     };
 
-    const res = await fetch('http://localhost:3000/scores', {
+    const res = await fetch('https://competencias-ironbox-api.onrender.com/scores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyData)
