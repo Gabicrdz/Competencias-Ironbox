@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { AthletesService } from './athletes.service';
 import { CreateAthleteDto } from './dto/create-athlete.dto';
 
@@ -18,6 +18,11 @@ export class AthletesController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.athletesService.findOne(+id); // El símbolo '+' convierte el string a número
+    return this.athletesService.findOne(+id);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.athletesService.remove(+id);
   }
 }
