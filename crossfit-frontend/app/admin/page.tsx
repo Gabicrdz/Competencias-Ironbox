@@ -163,12 +163,10 @@ export default function AdminPage() {
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
               <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.athleteId} onChange={e => setScoreForm({...scoreForm, athleteId: e.target.value})} required>
                 <option value="">Seleccionar Atleta...</option>
-                {/* AHORA MUESTRA EL ATLETA Y SU CATEGORÍA */}
                 {athletes.map(a => <option key={a.id} value={a.id}>{a.fullName} ({a.category?.name || 'Sin Categoría'})</option>)}
               </select>
               <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value})} required>
                 <option value="">Seleccionar WOD...</option>
-                {/* AHORA MUESTRA EL WOD Y SU CATEGORÍA */}
                 {wods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name || 'Sin Categoría'}</option>)}
               </select>
               <div className="flex gap-2">
@@ -182,20 +180,25 @@ export default function AdminPage() {
 
       <hr className="border-gray-700 mb-12" />
 
-      {/* RECUADROS CON BOTONES DE BORRAR */}
+      {/* RECUADROS CON BOTONES DE BORRAR Y GIMNASIOS VISIBLES */}
       <h2 className="text-2xl font-bold text-center mb-8 text-gray-300">Resumen de Datos Cargados</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Recuadro de Atletas */}
+        {/* Recuadro de Atletas (AHORA MUESTRA EL GIMNASIO) */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-lg overflow-auto max-h-96 border border-gray-700">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏃 Atletas ({athletes.length})</h3>
           <ul className="flex flex-col gap-2">
             {athletes.map(a => (
               <li key={a.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-white">{a.fullName}</span>
-                  <span className="text-gray-400 text-xs ml-2 bg-gray-800 px-2 py-1 rounded">{a.category?.name}</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">{a.fullName}</span>
+                    <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{a.category?.name}</span>
+                  </div>
+                  <span className="text-gray-400 text-xs mt-1">
+                    🏢 Box: {a.boxName ? a.boxName : 'Independiente'}
+                  </span>
                 </div>
                 <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
               </li>
