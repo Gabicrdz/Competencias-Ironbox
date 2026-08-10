@@ -197,7 +197,7 @@ export default function AdminPage() {
                     <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{a.category?.name}</span>
                   </div>
                   <span className="text-gray-400 text-xs mt-1">
-                    🏢 Box: {a.boxName ? a.boxName : 'Independiente'}
+                     Box: {a.boxName ? a.boxName : 'Independiente'}
                   </span>
                 </div>
                 <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
