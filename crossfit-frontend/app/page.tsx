@@ -52,9 +52,8 @@ export default function LeaderboardPage() {
     <main className="min-h-screen p-6 bg-gray-900 text-white">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-black text-center mb-2 tracking-wider text-yellow-500">
-          IRONBOX LEADERBOARD
+          Tabla de Posiciones en Vivo
         </h1>
-        <p className="text-center text-gray-400 mb-8">Tabla de Posiciones en Vivo</p>
 
         {/* Botones para seleccionar Categoría */}
         <div className="flex justify-center gap-4 mb-8 flex-wrap">

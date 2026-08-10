@@ -97,8 +97,7 @@ export default function AdminPage() {
     }
   };
 
-  // --- NUEVAS FUNCIONES PARA BORRAR ---
-
+  // Funciones para Borrar
   const handleDeleteAthlete = async (id: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este atleta?')) return;
     const res = await fetch(`https://competencias-ironbox-api.onrender.com/athletes/${id}`, { method: 'DELETE' });
@@ -164,11 +163,13 @@ export default function AdminPage() {
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
               <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.athleteId} onChange={e => setScoreForm({...scoreForm, athleteId: e.target.value})} required>
                 <option value="">Seleccionar Atleta...</option>
-                {athletes.map(a => <option key={a.id} value={a.id}>{a.fullName}</option>)}
+                {/* AHORA MUESTRA EL ATLETA Y SU CATEGORÍA */}
+                {athletes.map(a => <option key={a.id} value={a.id}>{a.fullName} ({a.category?.name || 'Sin Categoría'})</option>)}
               </select>
               <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value})} required>
                 <option value="">Seleccionar WOD...</option>
-                {wods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {/* AHORA MUESTRA EL WOD Y SU CATEGORÍA */}
+                {wods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name || 'Sin Categoría'}</option>)}
               </select>
               <div className="flex gap-2">
                 <input type="number" className="p-2 bg-gray-700 rounded w-1/2 text-white" placeholder="Posición" value={scoreForm.position} onChange={e => setScoreForm({...scoreForm, position: e.target.value})} required />
@@ -194,7 +195,7 @@ export default function AdminPage() {
               <li key={a.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
                 <div>
                   <span className="font-bold text-white">{a.fullName}</span>
-                  <span className="text-gray-400 text-xs ml-2 bg-gray-800 px-2 py-1 rounded">{a.boxName || 'Sin Box'}</span>
+                  <span className="text-gray-400 text-xs ml-2 bg-gray-800 px-2 py-1 rounded">{a.category?.name}</span>
                 </div>
                 <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
               </li>
@@ -210,7 +211,10 @@ export default function AdminPage() {
             {wods.map(w => (
               <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
                 <div className="flex flex-col">
-                  <strong className="text-white">{w.name}</strong> 
+                  <div className="flex items-center gap-2">
+                    <strong className="text-white">{w.name}</strong>
+                    <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{w.category?.name}</span>
+                  </div>
                   <span className="text-gray-400 text-xs mt-1">{w.description || 'Sin descripción'}</span>
                 </div>
                 <button onClick={() => handleDeleteWod(w.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️ Borrar</button>
@@ -229,7 +233,7 @@ export default function AdminPage() {
                 <div>
                   <div className="font-bold text-green-400 mb-1">{s.athlete?.fullName || `Atleta Desconocido`}</div>
                   <div className="flex gap-2 items-center text-xs text-gray-300">
-                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name || `WOD Desconocido`}</span>
+                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name || `WOD Desconocido`} - {s.wod?.category?.name || ''}</span>
                     <span className="font-bold">Pos: {s.position} | Pts: {s.points}</span>
                   </div>
                 </div>
