@@ -1,20 +1,15 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model Admin {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String // Aquí guardaremos la contraseña encriptada
-}
-
 model Category {
   id       Int       @id @default(autoincrement())
-  name     String    @unique // Principiantes, Scaled, Advance, RX
+  name     String
   athletes Athlete[]
   wods     Wod[]
 }
@@ -22,7 +17,7 @@ model Category {
 model Athlete {
   id         Int      @id @default(autoincrement())
   fullName   String
-  boxName    String?  // Opcional, por si quieren poner a qué box representan
+  boxName    String?
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
   scores     Score[]
@@ -30,8 +25,9 @@ model Athlete {
 
 model Wod {
   id          Int      @id @default(autoincrement())
-  name        String   // Ej: WOD 1, WOD 2
+  name        String
   description String?
+  type        String   // Nuevo: "TIME" (For Time), "REPS" (AMRAP), "WEIGHT" (RM)
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   scores      Score[]
@@ -39,13 +35,13 @@ model Wod {
 
 model Score {
   id           Int      @id @default(autoincrement())
-  position     Int      // Posición en la que terminó el WOD
-  points       Int      // Puntos otorgados por esa posición
-  observations String?  // Para resolver empates o penalizaciones
   athleteId    Int
-  athlete      Athlete  @relation(fields: [athleteId], references: [id])
   wodId        Int
+  resultValue  Int      // Nuevo: Valor numérico para que el sistema ordene (ej: 750 segundos o 120 reps)
+  resultString String   // Nuevo: Texto para mostrar al público (ej: "12:30" o "120 reps")
+  points       Int?     // Opcional: El sistema lo llenará solo
+  position     Int?     // Opcional: El sistema lo llenará solo
+  observations String?
+  athlete      Athlete  @relation(fields: [athleteId], references: [id])
   wod          Wod      @relation(fields: [wodId], references: [id])
-
-  @@unique([athleteId, wodId]) // Un atleta solo puede tener un puntaje por WOD
 }
