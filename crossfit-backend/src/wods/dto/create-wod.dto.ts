@@ -1,6 +1,6 @@
 export class CreateWodDto {
-  name: string;
+  name!: string;
   description?: string;
-  type: string;
-  categoryId: number;
+  type!: string;
+  categoryId!: number;
 }
