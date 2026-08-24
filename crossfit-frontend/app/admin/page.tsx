@@ -123,7 +123,7 @@ export default function HomePage() {
                     <div className="bg-slate-900/80 p-4 border-l-4 border-yellow-500 text-sm">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {athlete.athleteScores.length > 0 ? (
-                          athlete.athleteScores.map(score => (
+                         athlete.athleteScores.map((score: any) => (
                             <div key={score.id} className="bg-slate-800 rounded p-3 flex justify-between items-center shadow-inner">
                               <div>
                                 <span className="text-yellow-500 font-bold text-xs uppercase tracking-wider block mb-1">
