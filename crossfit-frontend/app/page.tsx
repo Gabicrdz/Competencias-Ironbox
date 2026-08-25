@@ -45,7 +45,7 @@ export default function HomePage() {
 <div className="flex justify-center items-center gap-6 md:gap-12 mb-6 bg-white p-4 rounded-3xl shadow-md border-2 border-[#27aae1]/20">
   <img src="/logo-ironbox.jpeg" alt="Iron Box" className="h-16 md:h-24 object-contain rounded-xl" />
   <div className="h-16 w-px bg-gray-300"></div> {/* Línea divisoria */}
-  <img src="/logo-atodacosta.jpeg" alt="A Toda Costa" className="h-20 md:h-28 object-contain" />
+  <img src="/logo-atodacosta.png" alt="A Toda Costa" className="h-20 md:h-28 object-contain" />
 </div>
 
         <h1 className="text-3xl md:text-5xl font-extrabold text-[#1a2b4c] mb-8 tracking-tight text-center uppercase">
