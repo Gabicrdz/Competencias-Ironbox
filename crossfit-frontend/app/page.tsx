@@ -8,7 +8,7 @@ export default function HomePage() {
   const [scores, setScores] = useState<any[]>([]);
   
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
-  const [activeGender, setActiveGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO'); // NUEVO FILTRO DE GÉNERO
+  const [activeGender, setActiveGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
   const [expandedAthlete, setExpandedAthlete] = useState<number | null>(null);
 
   useEffect(() => {
@@ -25,7 +25,6 @@ export default function HomePage() {
     }).catch(error => console.error("Error cargando:", error));
   }, []);
 
-  // 🧮 CÁLCULO: Filtramos por categoría Y TAMBIÉN por género
   const leaderboard = athletes
     .filter(a => a.categoryId === activeCategoryId && a.gender === activeGender)
     .map(athlete => {
@@ -36,11 +35,21 @@ export default function HomePage() {
     .sort((a, b) => b.totalPoints - a.totalPoints);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#eaf5fa] text-[#1a2b4c] p-4 md:p-8 font-sans">
+      {/* FONDO CLARO ESTILO FESTIVAL */}
       
-      <div className="text-center mb-10 mt-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-6 tracking-wide drop-shadow-md">
-          Tabla de Posiciones en Vivo
+      {/* ENCABEZADO CON LOGOS */}
+      <div className="max-w-4xl mx-auto flex flex-col items-center mb-10 mt-4">
+        
+        {/* Logos Container */}
+        <div className="flex justify-center items-center gap-6 md:gap-12 mb-6 bg-white p-4 rounded-3xl shadow-md border-2 border-[#27aae1]/20">
+          <img src="/logo-ironbox.jpg" alt="Iron Box" className="h-16 md:h-24 object-contain rounded-xl" />
+          <div className="h-16 w-px bg-gray-300"></div> {/* Línea divisoria */}
+          <img src="/logo-atodacosta.jpg" alt="A Toda Costa" className="h-20 md:h-28 object-contain" />
+        </div>
+
+        <h1 className="text-3xl md:text-5xl font-extrabold text-[#1a2b4c] mb-8 tracking-tight text-center uppercase">
+          Competencia <span className="text-[#d91470]">Crosstime</span>
         </h1>
         
         {/* PESTAÑAS DE CATEGORÍAS */}
@@ -49,10 +58,10 @@ export default function HomePage() {
             <button
               key={category.id}
               onClick={() => setActiveCategoryId(category.id)}
-              className={`px-6 py-2 rounded-lg font-bold transition-all duration-300 shadow-lg ${
+              className={`px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
                 activeCategoryId === category.id 
-                  ? 'bg-yellow-500 text-slate-900 scale-105' 
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-[#1a2b4c] text-white border-[#1a2b4c] shadow-lg scale-105' 
+                  : 'bg-white text-[#1a2b4c] border-gray-300 hover:border-[#27aae1]'
               }`}
             >
               {category.name}
@@ -60,14 +69,14 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* BOTONES INTERRUPTORES DE GÉNERO (NUEVO) */}
+        {/* BOTONES DE GÉNERO */}
         <div className="flex justify-center gap-4">
           <button 
             onClick={() => setActiveGender('MASCULINO')}
             className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
               activeGender === 'MASCULINO' 
-                ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(37,99,235,0.6)]' 
-                : 'bg-transparent border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-400'
+                ? 'bg-[#27aae1] border-[#27aae1] text-white shadow-md' 
+                : 'bg-white border-gray-300 text-gray-500 hover:border-[#27aae1] hover:text-[#27aae1]'
             }`}
           >
             🚹 Masculino
@@ -77,8 +86,8 @@ export default function HomePage() {
             onClick={() => setActiveGender('FEMENINO')}
             className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
               activeGender === 'FEMENINO' 
-                ? 'bg-pink-600 border-pink-400 text-white shadow-[0_0_15px_rgba(219,39,119,0.6)]' 
-                : 'bg-transparent border-slate-700 text-slate-400 hover:border-pink-500 hover:text-pink-400'
+                ? 'bg-[#d91470] border-[#d91470] text-white shadow-md' 
+                : 'bg-white border-gray-300 text-gray-500 hover:border-[#d91470] hover:text-[#d91470]'
             }`}
           >
             🚺 Femenino
@@ -87,56 +96,68 @@ export default function HomePage() {
       </div>
 
       {/* TABLA PRINCIPAL */}
-      <div className="max-w-4xl mx-auto bg-[#1e293b] rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
-        <div className="grid grid-cols-12 gap-4 p-4 bg-slate-800 border-b border-slate-700 text-xs md:text-sm font-bold text-yellow-500 uppercase tracking-wider">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        
+        <div className="grid grid-cols-12 gap-4 p-4 bg-[#1a2b4c] text-white text-xs md:text-sm font-bold uppercase tracking-wider">
           <div className="col-span-2 md:col-span-1 text-center">POS</div>
           <div className="col-span-6 md:col-span-5">ATLETA</div>
           <div className="col-span-0 md:col-span-4 hidden md:block text-center">BOX</div>
           <div className="col-span-4 md:col-span-2 text-right pr-4">TOTAL PTS</div>
         </div>
 
-        <div className="divide-y divide-slate-700/50">
+        <div className="divide-y divide-gray-100">
           {leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 italic">
-              No hay atletas registrados en esta categoría y género todavía.
+            <div className="p-8 text-center text-gray-400 italic font-medium">
+              Aún no hay atletas registrados en esta categoría.
             </div>
           ) : (
             leaderboard.map((athlete, index) => {
               const position = index + 1;
               const isExpanded = expandedAthlete === athlete.id;
               
-              let posColor = "text-slate-400";
-              if (position === 1) posColor = "text-yellow-400 font-extrabold text-lg drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]";
-              if (position === 2) posColor = "text-gray-300 font-bold text-lg";
-              if (position === 3) posColor = "text-amber-600 font-bold text-lg";
+              let posColor = "text-gray-400 font-bold";
+              if (position === 1) posColor = "text-[#d91470] font-black text-xl"; 
+              if (position === 2) posColor = "text-[#27aae1] font-bold text-lg";  
+              if (position === 3) posColor = "text-[#1a2b4c] font-bold text-lg";  
 
               return (
                 <div key={athlete.id} className="flex flex-col">
-                  <div onClick={() => setExpandedAthlete(isExpanded ? null : athlete.id)} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-700/50 cursor-pointer transition-colors">
+                  <div 
+                    onClick={() => setExpandedAthlete(isExpanded ? null : athlete.id)} 
+                    className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-[#eaf5fa]/50 cursor-pointer transition-colors"
+                  >
                     <div className={`col-span-2 md:col-span-1 text-center ${posColor}`}>{position}º</div>
-                    <div className="col-span-6 md:col-span-5 font-bold text-slate-100 truncate">
+                    <div className="col-span-6 md:col-span-5 font-bold text-[#1a2b4c] truncate">
                       {athlete.fullName}
-                      <div className="md:hidden text-xs text-slate-400 font-normal mt-1">{athlete.boxName || 'Independiente'}</div>
+                      <div className="md:hidden text-xs text-gray-500 font-normal mt-1">{athlete.boxName || 'Independiente'}</div>
                     </div>
-                    <div className="col-span-0 md:col-span-4 hidden md:block text-center text-sm text-slate-400">{athlete.boxName || 'Independiente'}</div>
-                    <div className="col-span-4 md:col-span-2 text-right pr-4 font-black text-yellow-500 text-lg">{athlete.totalPoints}</div>
+                    <div className="col-span-0 md:col-span-4 hidden md:block text-center text-sm text-gray-500 font-medium">
+                      {athlete.boxName || 'Independiente'}
+                    </div>
+                    <div className="col-span-4 md:col-span-2 text-right pr-4 font-black text-[#27aae1] text-lg">
+                      {athlete.totalPoints}
+                    </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="bg-slate-900/80 p-4 border-l-4 border-yellow-500 text-sm">
+                    <div className="bg-gray-50 p-4 border-l-4 border-[#d91470] text-sm shadow-inner">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {athlete.athleteScores.length > 0 ? (
                           athlete.athleteScores.map((score: any) => (
-                            <div key={score.id} className="bg-slate-800 rounded p-3 flex justify-between items-center shadow-inner">
+                            <div key={score.id} className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm border border-gray-100">
                               <div>
-                                <span className="text-yellow-500 font-bold text-xs uppercase tracking-wider block mb-1">{score.wod?.name || 'WOD'}</span>
-                                <span className="text-slate-300">Res: <strong>{score.resultString}</strong> (Pos: {score.position}º)</span>
+                                <span className="text-[#1a2b4c] font-bold text-xs uppercase tracking-wider block mb-1">
+                                  {score.wod?.name || 'WOD'}
+                                </span>
+                                <span className="text-gray-600">Res: <strong className="text-[#d91470]">{score.resultString}</strong> (Pos: {score.position}º)</span>
                               </div>
-                              <div className="text-lg font-bold text-green-400">+{score.points} pts</div>
+                              <div className="text-lg font-bold text-[#27aae1]">
+                                +{score.points} pts
+                              </div>
                             </div>
                           ))
                         ) : (
-                          <div className="text-slate-500 italic col-span-2">Aún no tiene resultados cargados.</div>
+                          <div className="text-gray-400 italic col-span-2">Aún no tiene resultados cargados.</div>
                         )}
                       </div>
                     </div>
