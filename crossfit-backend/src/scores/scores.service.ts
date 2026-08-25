@@ -7,10 +7,10 @@ export class ScoresService {
   constructor(private prisma: PrismaService) {}
 
   async create(createScoreDto: CreateScoreDto) {
-    // 1. Guardamos el resultado crudo que envió el juez
+    // 1. Guardamos el resultado crudo
     const newScore = await this.prisma.score.create({ data: createScoreDto });
 
-    // 2. Mandamos a recalcular toda la tabla de ese WOD
+    // 2. Mandamos a recalcular la tabla
     await this.recalculateRankings(createScoreDto.wodId);
 
     return newScore;
@@ -33,44 +33,50 @@ export class ScoresService {
     const score = await this.prisma.score.findUnique({ where: { id } });
     if (!score) return;
 
-    // Borramos el registro
     await this.prisma.score.delete({ where: { id } });
-
-    // Recalculamos la tabla porque alguien salió de la lista
     await this.recalculateRankings(score.wodId);
     return score;
   }
 
-  // 🔥 EL CEREBRO DE LA COMPETENCIA 🔥
+  // 🔥 EL CEREBRO DE LA COMPETENCIA (AHORA CON SISTEMA DE EMPATES) 🔥
   private async recalculateRankings(wodId: number) {
-    // 1. Buscamos de qué tipo es el WOD (Tiempo, Peso o Reps)
     const wod = await this.prisma.wod.findUnique({ where: { id: wodId } });
     if (!wod) return;
 
-    // 2. Traemos todas las puntuaciones de los atletas en ese WOD
     const scores = await this.prisma.score.findMany({ where: { wodId } });
 
-    // 3. Los ordenamos automáticamente
+    // 1. Los ordenamos matemáticamente
     scores.sort((a, b) => {
       if (wod.type === 'TIME') {
-        return a.resultValue - b.resultValue; // Si es tiempo, el menor número gana
+        return a.resultValue - b.resultValue; 
       } else {
-        return b.resultValue - a.resultValue; // Si es peso/reps, el mayor número gana
+        return b.resultValue - a.resultValue; 
       }
     });
 
-    // 4. Repartimos los puntos y posiciones
-    const topPoints = [100, 95, 90, 85, 80]; // Puntos para el Top 5
+    const topPoints = [100, 95, 90, 85, 80]; 
+    
+    // Variables para recordar cómo le fue al atleta anterior
+    let currentRank = 1;
+    let currentPoints = 100;
+    let previousResult: number | null = null;
 
     for (let i = 0; i < scores.length; i++) {
-      const position = i + 1;
-      // Si está en el Top 5 le da los puntos fuertes, si no, va restando de a 1 punto.
-      const points = position <= 5 ? topPoints[i] : Math.max(0, 80 - (position - 5));
+      // 2. Comparamos: Si es el primer atleta de la lista, o si hizo un resultado DIFERENTE al anterior...
+      if (i === 0 || scores[i].resultValue !== previousResult) {
+        // ...le asignamos su puesto real basado en su lugar en la lista (Ej: i=2 significa 3er puesto)
+        currentRank = i + 1; 
+        currentPoints = currentRank <= 5 ? topPoints[currentRank - 1] : Math.max(0, 80 - (currentRank - 5));
+      }
+      // Si el resultado es IGUAL al anterior, el 'if' se salta y el atleta hereda exactamente el mismo Rank y Points.
 
-      // 5. Actualizamos el registro del atleta con su nueva medalla y puntos
+      // Guardamos el resultado de este atleta para compararlo con el siguiente
+      previousResult = scores[i].resultValue;
+
+      // 3. Guardamos la nueva posición y puntaje en la base de datos
       await this.prisma.score.update({
         where: { id: scores[i].id },
-        data: { position, points }
+        data: { position: currentRank, points: currentPoints }
       });
     }
   }
