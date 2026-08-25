@@ -158,17 +158,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* NUEVO: FOOTER GUBERNAMENTAL / SPONSORS */}
-      <div className="w-full bg-[#00a3a7] py-8 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,163,167,0.3)] mt-auto">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col items-center">
-          <img 
-            src="/logos-gobierno.png" 
-            alt="Gobierno de Formosa y Sponsors" 
-            className="w-full max-w-4xl object-contain drop-shadow-lg"
-          />
-        </div>
-      </div>
-
     </div>
   );
 }
