@@ -2,139 +2,152 @@
 
 import React, { useState, useEffect } from 'react';
 
-export default function LeaderboardPage() {
+export default function HomePage() {
+  const [categories, setCategories] = useState<any[]>([]);
   const [athletes, setAthletes] = useState<any[]>([]);
-  const [wods, setWods] = useState<any[]>([]);
   const [scores, setScores] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number>(1); // Por defecto Categoría 1 (Principiantes)
+  
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [expandedAthlete, setExpandedAthlete] = useState<number | null>(null);
 
-  // Cargar todos los datos necesarios al abrir la página
   useEffect(() => {
-    fetch('https://competencias-ironbox-api.onrender.com/athletes')
-      .then(res => res.json())
-      .then(data => setAthletes(data))
-      .catch(() => {});
-
-    fetch('https://competencias-ironbox-api.onrender.com/wods')
-      .then(res => res.json())
-      .then(data => setWods(data))
-      .catch(() => {});
-
-    fetch('https://competencias-ironbox-api.onrender.com/scores')
-      .then(res => res.json())
-      .then(data => setScores(data))
-      .catch(() => {});
+    // Descargamos todo al entrar a la página
+    Promise.all([
+      fetch('https://competencias-ironbox-api.onrender.com/categories').then(res => res.json()),
+      fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()),
+      fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json())
+    ]).then(([catsData, athsData, scoresData]) => {
+      setCategories(catsData);
+      setAthletes(athsData);
+      setScores(scoresData);
+      
+      // Seleccionar la primera categoría por defecto si existe
+      if (catsData.length > 0) {
+        setActiveCategoryId(catsData[0].id);
+      }
+    }).catch(error => console.error("Error cargando los datos:", error));
   }, []);
 
-  // Filtrar atletas y WODs según la categoría seleccionada
-  const filteredAthletes = athletes.filter(a => a.categoryId === Number(selectedCategory));
-  const filteredWods = wods.filter(w => w.categoryId === Number(selectedCategory));
-
-  // Calcular la tabla de posiciones por puntos totales para la categoría
-  const leaderboardData = filteredAthletes.map(athlete => {
-    // Buscar todas las puntuaciones de este atleta
-    const athleteScores = scores.filter(s => s.athleteId === athlete.id);
-    
-    // Sumar los puntos totales de todos los WODs
-    const totalPoints = athleteScores.reduce((sum, score) => sum + score.points, 0);
-
-    return {
-      ...athlete,
-      scores: athleteScores,
-      totalPoints,
-    };
-  });
-
-  // Ordenar de mayor a menor puntaje (el que más puntos tiene va primero)
-  leaderboardData.sort((a, b) => b.totalPoints - a.totalPoints);
+  // 🧮 CÁLCULO DE LA TABLA DE POSICIONES
+  // 1. Filtramos los atletas por la categoría seleccionada
+  // 2. Sumamos todos sus puntos
+  // 3. Los ordenamos de mayor a menor puntaje
+  const leaderboard = athletes
+    .filter(a => a.categoryId === activeCategoryId)
+    .map(athlete => {
+      const athleteScores = scores.filter(s => s.athleteId === athlete.id);
+      const totalPoints = athleteScores.reduce((sum, currentScore) => sum + (currentScore.points || 0), 0);
+      return { ...athlete, totalPoints, athleteScores };
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints); // Ordenar de mayor a menor
 
   return (
-    <main className="min-h-screen p-6 bg-gray-900 text-white">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl font-black text-center mb-2 tracking-wider text-yellow-500">
+    <div className="min-h-screen bg-[#0f172a] text-white p-4 md:p-8 font-sans">
+      
+      {/* ENCABEZADO */}
+      <div className="text-center mb-10 mt-8">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-6 tracking-wide drop-shadow-md">
           Tabla de Posiciones en Vivo
         </h1>
-
-        {/* Botones para seleccionar Categoría */}
-        <div className="flex justify-center gap-4 mb-8 flex-wrap">
-          {[
-            { id: 1, name: 'Principiantes' },
-            { id: 2, name: 'Scaled' },
-            { id: 3, name: 'Advance' },
-            { id: 4, name: 'RX' },
-          ].map(cat => (
+        
+        {/* PESTAÑAS DE CATEGORÍAS */}
+        <div className="flex flex-wrap justify-center gap-3">
+          {categories.map(category => (
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-5 py-2 rounded-xl font-bold transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-yellow-500 text-gray-900 shadow-lg scale-105'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              key={category.id}
+              onClick={() => setActiveCategoryId(category.id)}
+              className={`px-6 py-2 rounded-lg font-bold transition-all duration-300 shadow-lg ${
+                activeCategoryId === category.id 
+                  ? 'bg-yellow-500 text-slate-900 scale-105' 
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {cat.name}
+              {category.name}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Tabla de Clasificación */}
-        <div className="bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-900 text-gray-400 border-b border-gray-700 text-sm uppercase">
-                  <th className="p-4 text-center w-16">Pos</th>
-                  <th className="p-4">Atleta</th>
-                  <th className="p-4">Box</th>
-                  {filteredWods.map(wod => (
-                    <th key={wod.id} className="p-4 text-center">{wod.name}</th>
-                  ))}
-                  <th className="p-4 text-center text-yellow-500 font-bold">Total Pts</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {leaderboardData.length === 0 ? (
-                  <tr>
-                    <td colSpan={5 + filteredWods.length} className="text-center p-8 text-gray-400">
-                      No hay atletas registrados en esta categoría todavía.
-                    </td>
-                  </tr>
-                ) : (
-                  leaderboardData.map((athlete, index) => (
-                    <tr key={athlete.id} className="hover:bg-gray-750 transition-colors">
-                      <td className="p-4 text-center font-bold text-lg">
-                        {index === 0 ? '🥇 1' : index === 1 ? '🥈 2' : index === 2 ? '🥉 3' : index + 1}
-                      </td>
-                      <td className="p-4 font-semibold text-white">{athlete.fullName}</td>
-                      <td className="p-4 text-gray-400 text-sm">{athlete.boxName || 'Independiente'}</td>
-                      
-                      {/* Puntaje por cada WOD */}
-                      {filteredWods.map(wod => {
-                        const scoreEntry = athlete.scores.find((s: any) => s.wodId === wod.id);
-                        return (
-                          <td key={wod.id} className="p-4 text-center">
-                            {scoreEntry ? (
-                              <span className="bg-gray-700 px-2.5 py-1 rounded-md text-sm font-medium">
-                                {scoreEntry.points} pts <span className="text-xs text-gray-400">(#{scoreEntry.position})</span>
-                              </span>
-                            ) : (
-                              <span className="text-gray-600">-</span>
-                            )}
-                          </td>
-                        );
-                      })}
+      {/* TABLA PRINCIPAL */}
+      <div className="max-w-4xl mx-auto bg-[#1e293b] rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+        
+        {/* Cabecera de la tabla */}
+        <div className="grid grid-cols-12 gap-4 p-4 bg-slate-800 border-b border-slate-700 text-xs md:text-sm font-bold text-yellow-500 uppercase tracking-wider">
+          <div className="col-span-2 md:col-span-1 text-center">POS</div>
+          <div className="col-span-6 md:col-span-5">ATLETA</div>
+          <div className="col-span-0 md:col-span-4 hidden md:block text-center">BOX</div>
+          <div className="col-span-4 md:col-span-2 text-right pr-4">TOTAL PTS</div>
+        </div>
 
-                      <td className="p-4 text-center font-black text-yellow-400 text-lg">
-                        {athlete.totalPoints}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* Lista de Atletas */}
+        <div className="divide-y divide-slate-700/50">
+          {leaderboard.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 italic">
+              No hay atletas registrados en esta categoría todavía.
+            </div>
+          ) : (
+            leaderboard.map((athlete, index) => {
+              const position = index + 1;
+              const isExpanded = expandedAthlete === athlete.id;
+              
+              // Colores especiales para el podio (Top 3)
+              let posColor = "text-slate-400";
+              if (position === 1) posColor = "text-yellow-400 font-extrabold text-lg drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]";
+              if (position === 2) posColor = "text-gray-300 font-bold text-lg";
+              if (position === 3) posColor = "text-amber-600 font-bold text-lg";
+
+              return (
+                <div key={athlete.id} className="flex flex-col">
+                  {/* Fila del Atleta (Clicleable) */}
+                  <div 
+                    onClick={() => setExpandedAthlete(isExpanded ? null : athlete.id)}
+                    className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-700/50 cursor-pointer transition-colors"
+                  >
+                    <div className={`col-span-2 md:col-span-1 text-center ${posColor}`}>
+                      {position}º
+                    </div>
+                    <div className="col-span-6 md:col-span-5 font-bold text-slate-100 truncate">
+                      {athlete.fullName}
+                      <div className="md:hidden text-xs text-slate-400 font-normal mt-1">{athlete.boxName || 'Independiente'}</div>
+                    </div>
+                    <div className="col-span-0 md:col-span-4 hidden md:block text-center text-sm text-slate-400">
+                      {athlete.boxName || 'Independiente'}
+                    </div>
+                    <div className="col-span-4 md:col-span-2 text-right pr-4 font-black text-yellow-500 text-lg">
+                      {athlete.totalPoints}
+                    </div>
+                  </div>
+
+                  {/* Detalle Expandible (El toque de lujo) */}
+                  {isExpanded && (
+                    <div className="bg-slate-900/80 p-4 border-l-4 border-yellow-500 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {athlete.athleteScores.length > 0 ? (
+                          athlete.athleteScores.map((score: any) => (
+                            <div key={score.id} className="bg-slate-800 rounded p-3 flex justify-between items-center shadow-inner">
+                              <div>
+                                <span className="text-yellow-500 font-bold text-xs uppercase tracking-wider block mb-1">
+                                  {score.wod?.name || 'WOD'}
+                                </span>
+                                <span className="text-slate-300">Res: <strong>{score.resultString}</strong> (Pos: {score.position}º)</span>
+                              </div>
+                              <div className="text-lg font-bold text-green-400">
+                                +{score.points} pts
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-slate-500 italic col-span-2">Aún no tiene resultados cargados.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
