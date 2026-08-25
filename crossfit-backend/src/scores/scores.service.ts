@@ -7,12 +7,8 @@ export class ScoresService {
   constructor(private prisma: PrismaService) {}
 
   async create(createScoreDto: CreateScoreDto) {
-    // 1. Guardamos el resultado crudo
     const newScore = await this.prisma.score.create({ data: createScoreDto });
-
-    // 2. Mandamos a recalcular la tabla
     await this.recalculateRankings(createScoreDto.wodId);
-
     return newScore;
   }
 
@@ -38,46 +34,57 @@ export class ScoresService {
     return score;
   }
 
-  // 🔥 EL CEREBRO DE LA COMPETENCIA (AHORA CON SISTEMA DE EMPATES) 🔥
+  // 🔥 EL CEREBRO DE LA COMPETENCIA (AHORA SEPARA POR GÉNERO Y EMPATES) 🔥
   private async recalculateRankings(wodId: number) {
     const wod = await this.prisma.wod.findUnique({ where: { id: wodId } });
     if (!wod) return;
 
-    const scores = await this.prisma.score.findMany({ where: { wodId } });
-
-    // 1. Los ordenamos matemáticamente
-    scores.sort((a, b) => {
-      if (wod.type === 'TIME') {
-        return a.resultValue - b.resultValue; 
-      } else {
-        return b.resultValue - a.resultValue; 
-      }
+    // 1. Traemos todos los puntajes INCLUYENDO los datos del atleta para saber su género
+    const allScores = await this.prisma.score.findMany({ 
+      where: { wodId },
+      include: { athlete: true } 
     });
 
-    const topPoints = [100, 95, 90, 85, 80]; 
-    
-    // Variables para recordar cómo le fue al atleta anterior
-    let currentRank = 1;
-    let currentPoints = 100;
-    let previousResult: number | null = null;
+    // 2. Definimos los géneros a evaluar
+    const genders = ['MASCULINO', 'FEMENINO'];
 
-    for (let i = 0; i < scores.length; i++) {
-      // 2. Comparamos: Si es el primer atleta de la lista, o si hizo un resultado DIFERENTE al anterior...
-      if (i === 0 || scores[i].resultValue !== previousResult) {
-        // ...le asignamos su puesto real basado en su lugar en la lista (Ej: i=2 significa 3er puesto)
-        currentRank = i + 1; 
-        currentPoints = currentRank <= 5 ? topPoints[currentRank - 1] : Math.max(0, 80 - (currentRank - 5));
-      }
-      // Si el resultado es IGUAL al anterior, el 'if' se salta y el atleta hereda exactamente el mismo Rank y Points.
+    // 3. Procesamos cada género por separado
+    for (const gender of genders) {
+      // Filtramos solo los puntajes de este género en específico
+      const scores = allScores.filter(s => (s.athlete as any)?.gender === gender);
+      
+      if (scores.length === 0) continue; // Si no hay atletas de este género, saltamos
 
-      // Guardamos el resultado de este atleta para compararlo con el siguiente
-      previousResult = scores[i].resultValue;
-
-      // 3. Guardamos la nueva posición y puntaje en la base de datos
-      await this.prisma.score.update({
-        where: { id: scores[i].id },
-        data: { position: currentRank, points: currentPoints }
+      // 4. Los ordenamos matemáticamente (Menor a mayor si es Tiempo, Mayor a menor si es Reps/Peso)
+      scores.sort((a, b) => {
+        if (wod.type === 'TIME') {
+          return a.resultValue - b.resultValue; 
+        } else {
+          return b.resultValue - a.resultValue; 
+        }
       });
+
+      const topPoints = [100, 95, 90, 85, 80]; 
+      
+      let currentRank = 1;
+      let currentPoints = 100;
+      let previousResult: number | null = null;
+
+      // 5. Repartimos posiciones y puntos para este género
+      for (let i = 0; i < scores.length; i++) {
+        if (i === 0 || scores[i].resultValue !== previousResult) {
+          currentRank = i + 1; 
+          currentPoints = currentRank <= 5 ? topPoints[currentRank - 1] : Math.max(0, 80 - (currentRank - 5));
+        }
+
+        previousResult = scores[i].resultValue;
+
+        // 6. Guardamos en la base de datos
+        await this.prisma.score.update({
+          where: { id: scores[i].id },
+          data: { position: currentRank, points: currentPoints }
+        });
+      }
     }
   }
 }
