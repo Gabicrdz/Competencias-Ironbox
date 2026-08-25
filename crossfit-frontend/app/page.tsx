@@ -35,16 +35,15 @@ export default function HomePage() {
     .sort((a, b) => b.totalPoints - a.totalPoints);
 
   return (
-    // CONTENEDOR PRINCIPAL: Ahora usa flexbox para empujar el footer hacia abajo
     <div className="min-h-screen flex flex-col bg-[#eaf5fa] text-[#1a2b4c] font-sans">
       
-      {/* CONTENIDO PRINCIPAL (Crece para ocupar el espacio) */}
+      {/* CONTENIDO PRINCIPAL */}
       <div className="flex-grow p-4 md:p-8">
         
         {/* ENCABEZADO CON LOGOS */}
         <div className="max-w-4xl mx-auto flex flex-col items-center mb-10 mt-4">
           <div className="flex justify-center items-center gap-6 md:gap-12 mb-6 bg-white p-4 rounded-3xl shadow-md border-2 border-[#27aae1]/20">
-            <img src="/logo-ironbox.jpeg" alt="Iron Box" className="h-16 md:h-24 object-contain rounded-xl" />
+            <img src="/logo-ironbox.png" alt="Iron Box" className="h-16 md:h-24 object-contain rounded-xl" />
             <div className="h-16 w-px bg-gray-300"></div>
             <img src="/logo-atodacosta.png" alt="A Toda Costa" className="h-20 md:h-28 object-contain" />
           </div>
@@ -156,6 +155,23 @@ export default function HomePage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* FOOTER ONDULADO (SVG) */}
+      <div className="w-full mt-auto">
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 1440 320" 
+          className="w-full h-auto block -mb-1"
+        >
+          <path 
+            fill="#00a3a7" 
+            fillOpacity="1" 
+            d="M0,160L48,170.7C96,181,192,203,288,186.7C384,171,480,117,576,96C672,75,768,85,864,112C960,139,1056,181,1152,192C1248,203,1344,181,1392,170.7L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+          ></path>
+        </svg>
+        {/* Relleno inferior extra celeste para pantallas grandes */}
+        <div className="bg-[#00a3a7] h-8 md:h-16 w-full"></div>
       </div>
 
     </div>
