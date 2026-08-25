@@ -196,7 +196,7 @@ export default function AdminPage() {
 
         {/* Formulario 3: Puntuación Ágil */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-blue-500">
-            <h2 className="text-xl font-bold mb-4 text-blue-400">3. Carga Ágil de Resultado</h2>
+            <h2 className="text-xl font-bold mb-4 text-blue-400">3. Cargar Puntuación</h2>
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
               
               {/* FILTROS EN CASCADA (Mismo Renglón) */}
