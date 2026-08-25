@@ -14,11 +14,8 @@ export default function AdminPage() {
   const [scoreForm, setScoreForm] = useState({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
 
   const [mensaje, setMensaje] = useState('');
-  
-  // NUEVO ESTADO: Para controlar qué descripción de WOD está abierta
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
 
-  // Función para descargar la info fresca de la base de datos
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories')
       .then(res => res.json())
@@ -137,7 +134,14 @@ export default function AdminPage() {
     if (res.ok) { setMensaje('Puntuación eliminada con éxito'); fetchData(); }
   };
 
+  // --- LÓGICA DE FILTRADO PARA EL FORMULARIO 3 ---
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
+  const selectedAthlete = athletes.find(a => a.id.toString() === scoreForm.athleteId);
+  
+  // Si hay un atleta seleccionado, filtramos los WODs de su categoría. Si no, la lista queda vacía.
+  const filteredWods = selectedAthlete 
+    ? wods.filter(w => w.categoryId === selectedAthlete.categoryId) 
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -170,7 +174,6 @@ export default function AdminPage() {
             <form onSubmit={handleCreateWod} className="flex flex-col gap-4">
               <input className="p-2 bg-gray-700 rounded text-white" placeholder="Nombre (Ej: WOD 1)" value={wodForm.name} onChange={e => setWodForm({...wodForm, name: e.target.value})} required />
               
-              {/* CAMBIO A TEXTAREA PARA DESCRIPCIONES MÁS LARGAS */}
               <textarea 
                 className="p-2 bg-gray-700 rounded text-white resize-y min-h-[80px]" 
                 placeholder="Descripción detallada del WOD..." 
@@ -191,20 +194,29 @@ export default function AdminPage() {
             </form>
         </div>
 
-        {/* Formulario Puntuación */}
+        {/* Formulario Puntuación INTELIGENTE */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-blue-500">
             <h2 className="text-xl font-bold mb-4 text-blue-400">3. Cargar Resultado</h2>
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
-              <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.athleteId} onChange={e => setScoreForm({...scoreForm, athleteId: e.target.value})} required>
+              
+              {/* SELECTOR DE ATLETA (Al cambiar limpia el WOD seleccionado) */}
+              <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.athleteId} onChange={e => {
+                setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' });
+              }} required>
                 <option value="">Seleccionar Atleta...</option>
                 {athletes.map(a => <option key={a.id} value={a.id}>{a.fullName} ({a.category?.name || 'Sin Categoría'})</option>)}
               </select>
               
-              <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.wodId} onChange={e => {
-                setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''});
-              }} required>
-                <option value="">Seleccionar WOD...</option>
-                {wods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name || 'Sin Categoría'}</option>)}
+              {/* SELECTOR DE WOD (Bloqueado si no hay atleta, y solo muestra los WODs de la categoría correcta) */}
+              <select 
+                className={`p-2 rounded text-white transition ${scoreForm.athleteId ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-red-900/50'}`} 
+                value={scoreForm.wodId} 
+                onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} 
+                required
+                disabled={!scoreForm.athleteId}
+              >
+                <option value="">{scoreForm.athleteId ? 'Seleccionar WOD...' : '👈 Primero selecciona un atleta'}</option>
+                {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name}</option>)}
               </select>
 
               {currentWod?.type === 'TIME' && (
@@ -269,8 +281,6 @@ export default function AdminPage() {
           <ul className="flex flex-col gap-2">
             {wods.map(w => (
               <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex flex-col transition-all">
-                
-                {/* Cabecera del WOD con los botones */}
                 <div className="flex justify-between items-center w-full">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
@@ -281,32 +291,18 @@ export default function AdminPage() {
                       {w.type === 'TIME' ? '⏱️ Por Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso (RM)'}
                     </span>
                   </div>
-                  
-                  {/* Botones de Acción (Info y Borrar) */}
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} 
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold transition"
-                      title="Ver descripción"
-                    >
+                    <button onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold transition" title="Ver descripción">
                       {expandedWodId === w.id ? '🔼' : 'ℹ️'}
                     </button>
-                    <button 
-                      onClick={() => handleDeleteWod(w.id)} 
-                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition"
-                    >
-                      🗑️
-                    </button>
+                    <button onClick={() => handleDeleteWod(w.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
                   </div>
                 </div>
-
-                {/* Recuadro Desplegable con la Descripción */}
                 {expandedWodId === w.id && (
                   <div className="mt-3 p-3 bg-gray-800 rounded border-l-2 border-blue-500 text-gray-300 text-xs whitespace-pre-wrap shadow-inner">
                     {w.description ? w.description : <span className="italic text-gray-500">Sin descripción cargada.</span>}
                   </div>
                 )}
-                
               </li>
             ))}
             {wods.length === 0 && <p className="text-gray-500 text-sm text-center">No hay WODs cargados</p>}
