@@ -8,10 +8,12 @@ export default function AdminPage() {
   const [wods, setWods] = useState<any[]>([]);
   const [scores, setScores] = useState<any[]>([]);
 
-  // Agregamos "gender" con valor por defecto
   const [athleteForm, setAthleteForm] = useState({ fullName: '', boxName: '', gender: 'MASCULINO', categoryId: '' });
   const [wodForm, setWodForm] = useState({ name: '', description: '', type: 'TIME', categoryId: '' });
   const [scoreForm, setScoreForm] = useState({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
+
+  // NUEVO: Filtros en cascada para agilizar la carga de puntajes
+  const [scoreFilter, setScoreFilter] = useState({ gender: '', categoryId: '' });
 
   const [mensaje, setMensaje] = useState('');
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
@@ -45,7 +47,7 @@ export default function AdminPage() {
       body: JSON.stringify({ 
         fullName: athleteForm.fullName, 
         boxName: athleteForm.boxName, 
-        gender: athleteForm.gender, // Enviamos el género al backend
+        gender: athleteForm.gender,
         categoryId: Number(athleteForm.categoryId) 
       })
     });
@@ -108,8 +110,9 @@ export default function AdminPage() {
     });
 
     if (res.ok) {
-      setMensaje('¡Puntuación cargada con éxito! (Posiciones actualizadas)');
-      setScoreForm({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
+      setMensaje('¡Puntuación cargada con éxito!');
+      // Vaciamos atleta y resultado, pero MANTENEMOS el género y categoría seleccionados
+      setScoreForm({ ...scoreForm, athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
       fetchData();
     }
   };
@@ -130,9 +133,18 @@ export default function AdminPage() {
     if (res.ok) { fetchData(); }
   };
 
+  // --- LÓGICA DE FILTRADO EN CASCADA ---
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
-  const selectedAthlete = athletes.find(a => a.id.toString() === scoreForm.athleteId);
-  const filteredWods = selectedAthlete ? wods.filter(w => w.categoryId === selectedAthlete.categoryId) : [];
+  
+  // 1. Filtramos los atletas basados en el Género y la Categoría seleccionada
+  const filteredAthletes = athletes.filter(a => {
+    const matchGender = scoreFilter.gender ? a.gender === scoreFilter.gender : false;
+    const matchCategory = scoreFilter.categoryId ? a.categoryId.toString() === scoreFilter.categoryId : false;
+    return matchGender && matchCategory;
+  });
+
+  // 2. Filtramos los WODs basados en la Categoría seleccionada
+  const filteredWods = wods.filter(w => w.categoryId.toString() === scoreFilter.categoryId);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -145,14 +157,13 @@ export default function AdminPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        {/* Formulario Atleta */}
+        {/* Formulario 1: Atleta */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-bold mb-4 text-blue-400">1. Registrar Atleta</h2>
             <form onSubmit={handleCreateAthlete} className="flex flex-col gap-4">
               <input className="p-2 bg-gray-700 rounded text-white" placeholder="Nombre completo" value={athleteForm.fullName} onChange={e => setAthleteForm({...athleteForm, fullName: e.target.value})} required />
               <input className="p-2 bg-gray-700 rounded text-white" placeholder="Box (Opcional)" value={athleteForm.boxName} onChange={e => setAthleteForm({...athleteForm, boxName: e.target.value})} />
               
-              {/* SELECTOR DE GÉNERO NUEVO */}
               <select className="p-2 bg-gray-700 rounded text-white font-bold" value={athleteForm.gender} onChange={e => setAthleteForm({...athleteForm, gender: e.target.value})} required>
                 <option value="MASCULINO">🚹 Masculino</option>
                 <option value="FEMENINO">🚺 Femenino</option>
@@ -165,7 +176,7 @@ export default function AdminPage() {
             </form>
         </div>
 
-        {/* Formulario WOD */}
+        {/* Formulario 2: WOD */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-bold mb-4 text-blue-400">2. Crear WOD</h2>
             <form onSubmit={handleCreateWod} className="flex flex-col gap-4">
@@ -183,22 +194,69 @@ export default function AdminPage() {
             </form>
         </div>
 
-        {/* Formulario Puntuación */}
+        {/* Formulario 3: Puntuación Ágil */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-blue-500">
-            <h2 className="text-xl font-bold mb-4 text-blue-400">3. Cargar Resultado</h2>
+            <h2 className="text-xl font-bold mb-4 text-blue-400">3. Carga Ágil de Resultado</h2>
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
-              <select className="p-2 bg-gray-700 rounded text-white" value={scoreForm.athleteId} onChange={e => {
-                setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' });
-              }} required>
-                <option value="">Seleccionar Atleta...</option>
-                {athletes.map(a => <option key={a.id} value={a.id}>{a.fullName} ({a.category?.name}) - {a.gender === 'MASCULINO' ? '🚹' : '🚺'}</option>)}
+              
+              {/* FILTROS EN CASCADA (Mismo Renglón) */}
+              <div className="flex gap-2">
+                <select 
+                  className="w-1/2 p-2 bg-gray-700 rounded text-white text-sm" 
+                  value={scoreFilter.gender} 
+                  onChange={e => {
+                    setScoreFilter({ ...scoreFilter, gender: e.target.value });
+                    setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); // Limpia la selección inferior
+                  }} 
+                  required
+                >
+                  <option value="">1. Género...</option>
+                  <option value="MASCULINO">🚹 Masculino</option>
+                  <option value="FEMENINO">🚺 Femenino</option>
+                </select>
+
+                <select 
+                  className={`w-1/2 p-2 rounded text-white text-sm transition ${scoreFilter.gender ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
+                  value={scoreFilter.categoryId} 
+                  onChange={e => {
+                    setScoreFilter({ ...scoreFilter, categoryId: e.target.value });
+                    setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); // Limpia la selección inferior
+                  }} 
+                  required
+                  disabled={!scoreFilter.gender}
+                >
+                  <option value="">2. Categoría...</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              {/* SELECTOR DE ATLETA (Filtrado) */}
+              <select 
+                className={`p-2 rounded text-white transition ${scoreFilter.categoryId ? 'bg-gray-700 border border-green-500' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'}`} 
+                value={scoreForm.athleteId} 
+                onChange={e => {
+                  setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' });
+                }} 
+                required
+                disabled={!scoreFilter.categoryId}
+              >
+                <option value="">{scoreFilter.categoryId ? '3. Seleccionar Atleta...' : '👈 Primero completa los filtros'}</option>
+                {filteredAthletes.map(a => <option key={a.id} value={a.id}>{a.fullName} {a.boxName ? `(${a.boxName})` : ''}</option>)}
               </select>
               
-              <select className={`p-2 rounded text-white transition ${scoreForm.athleteId ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-red-900/50'}`} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required disabled={!scoreForm.athleteId}>
-                <option value="">{scoreForm.athleteId ? 'Seleccionar WOD...' : '👈 Primero selecciona un atleta'}</option>
-                {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name}</option>)}
+              {/* SELECTOR DE WOD (Filtrado por Categoría) */}
+              <select 
+                className={`p-2 rounded text-white transition ${scoreForm.athleteId ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`} 
+                value={scoreForm.wodId} 
+                onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} 
+                required 
+                disabled={!scoreForm.athleteId}
+              >
+                <option value="">{scoreForm.athleteId ? '4. Seleccionar WOD...' : '👈 Luego selecciona el atleta'}</option>
+                {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
 
+              {/* INPUTS DINÁMICOS SEGÚN EL WOD */}
               {currentWod?.type === 'TIME' && (
                 <div className="flex gap-2 bg-gray-900 p-2 rounded border border-gray-600">
                   <div className="w-1/2 flex flex-col">
@@ -218,7 +276,7 @@ export default function AdminPage() {
                 </div>
               )}
               <button type="submit" disabled={!currentWod} className={`p-2 rounded font-bold transition ${currentWod ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
-                {currentWod ? 'Guardar y Calcular Posición' : 'Selecciona un WOD'}
+                {currentWod ? 'Guardar Puntaje' : 'Selecciona un WOD'}
               </button>
             </form>
         </div>
@@ -226,11 +284,11 @@ export default function AdminPage() {
 
       <hr className="border-gray-700 mb-12" />
 
-      {/* RECUADROS */}
+      {/* RECUADROS DE RESUMEN */}
       <h2 className="text-2xl font-bold text-center mb-8 text-gray-300">Resumen de Datos Cargados</h2>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Atletas (AQUÍ SE MUESTRA EL ICONO DEL GÉNERO) */}
+        {/* Atletas */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-lg overflow-auto max-h-96 border border-gray-700">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏃 Atletas ({athletes.length})</h3>
           <ul className="flex flex-col gap-2">
@@ -239,7 +297,6 @@ export default function AdminPage() {
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white">{a.fullName}</span>
-                    {/* ICONO DEL GÉNERO */}
                     <span className="text-xl" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
                     <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{a.category?.name}</span>
                   </div>
@@ -248,6 +305,7 @@ export default function AdminPage() {
                 <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
               </li>
             ))}
+            {athletes.length === 0 && <p className="text-gray-500 text-sm text-center">No hay atletas cargados</p>}
           </ul>
         </div>
 
@@ -277,6 +335,7 @@ export default function AdminPage() {
                 )}
               </li>
             ))}
+            {wods.length === 0 && <p className="text-gray-500 text-sm text-center">No hay WODs cargados</p>}
           </ul>
         </div>
 
@@ -288,17 +347,21 @@ export default function AdminPage() {
               <li key={s.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
                 <div className="flex flex-col w-full mr-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-green-400">{s.athlete?.fullName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-green-400">{s.athlete?.fullName}</span>
+                      <span className="text-sm">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
+                    </div>
                     <span className="text-yellow-400 font-bold bg-gray-800 px-2 rounded text-xs">{s.resultString}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-300 mt-1">
-                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name}</span>
+                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name} - {s.wod?.category?.name}</span>
                     <span className="font-bold text-blue-300">Pos: {s.position}º | {s.points} pts</span>
                   </div>
                 </div>
                 <button onClick={() => handleDeleteScore(s.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
               </li>
             ))}
+            {scores.length === 0 && <p className="text-gray-500 text-sm text-center">No hay puntuaciones cargadas</p>}
           </ul>
         </div>
       </div>
