@@ -8,12 +8,15 @@ export default function AdminPage() {
   const [wods, setWods] = useState<any[]>([]);
   const [scores, setScores] = useState<any[]>([]);
 
-  // Estados para los formularios (Agregamos "type" al WOD y campos específicos para Scores)
+  // Estados para los formularios
   const [athleteForm, setAthleteForm] = useState({ fullName: '', boxName: '', categoryId: '' });
   const [wodForm, setWodForm] = useState({ name: '', description: '', type: 'TIME', categoryId: '' });
   const [scoreForm, setScoreForm] = useState({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
 
   const [mensaje, setMensaje] = useState('');
+  
+  // NUEVO ESTADO: Para controlar qué descripción de WOD está abierta
+  const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
 
   // Función para descargar la info fresca de la base de datos
   const fetchData = () => {
@@ -75,19 +78,17 @@ export default function AdminPage() {
   const handleCreateScore = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Buscamos qué tipo de WOD es para saber cómo calcular el resultado
     const selectedWod = wods.find(w => w.id === Number(scoreForm.wodId));
     if (!selectedWod) return setMensaje('Debes seleccionar un WOD válido');
 
     let resultValue = 0;
     let resultString = '';
 
-    // Lógica para transformar el input visual a datos matemáticos
     if (selectedWod.type === 'TIME') {
       const m = Number(scoreForm.minutes) || 0;
       const s = Number(scoreForm.seconds) || 0;
-      resultValue = (m * 60) + s; // Convertimos todo a segundos para que el backend lo ordene
-      resultString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; // Formato MM:SS
+      resultValue = (m * 60) + s; 
+      resultString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     } else if (selectedWod.type === 'REPS') {
       resultValue = Number(scoreForm.result);
       resultString = `${resultValue} reps`;
@@ -136,7 +137,6 @@ export default function AdminPage() {
     if (res.ok) { setMensaje('Puntuación eliminada con éxito'); fetchData(); }
   };
 
-  // Saber qué WOD está seleccionado actualmente para cambiar el formulario de Puntuación
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
 
   return (
@@ -169,9 +169,15 @@ export default function AdminPage() {
             <h2 className="text-xl font-bold mb-4 text-blue-400">2. Crear WOD</h2>
             <form onSubmit={handleCreateWod} className="flex flex-col gap-4">
               <input className="p-2 bg-gray-700 rounded text-white" placeholder="Nombre (Ej: WOD 1)" value={wodForm.name} onChange={e => setWodForm({...wodForm, name: e.target.value})} required />
-              <input className="p-2 bg-gray-700 rounded text-white" placeholder="Descripción" value={wodForm.description} onChange={e => setWodForm({...wodForm, description: e.target.value})} />
               
-              {/* NUEVO: Selección del Tipo de WOD */}
+              {/* CAMBIO A TEXTAREA PARA DESCRIPCIONES MÁS LARGAS */}
+              <textarea 
+                className="p-2 bg-gray-700 rounded text-white resize-y min-h-[80px]" 
+                placeholder="Descripción detallada del WOD..." 
+                value={wodForm.description} 
+                onChange={e => setWodForm({...wodForm, description: e.target.value})} 
+              />
+              
               <select className="p-2 bg-gray-700 rounded text-white font-bold text-blue-300" value={wodForm.type} onChange={e => setWodForm({...wodForm, type: e.target.value})} required>
                 <option value="TIME">⏱️ Por Tiempo (For Time)</option>
                 <option value="REPS">🔄 Máximas Reps (AMRAP)</option>
@@ -185,7 +191,7 @@ export default function AdminPage() {
             </form>
         </div>
 
-        {/* Formulario Puntuación Inteligente */}
+        {/* Formulario Puntuación */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-blue-500">
             <h2 className="text-xl font-bold mb-4 text-blue-400">3. Cargar Resultado</h2>
             <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
@@ -201,7 +207,6 @@ export default function AdminPage() {
                 {wods.map(w => <option key={w.id} value={w.id}>{w.name} - {w.category?.name || 'Sin Categoría'}</option>)}
               </select>
 
-              {/* RENDERIZADO CONDICIONAL DEL INPUT SEGÚN EL TIPO DE WOD */}
               {currentWod?.type === 'TIME' && (
                 <div className="flex gap-2 bg-gray-900 p-2 rounded border border-gray-600">
                   <div className="w-1/2 flex flex-col">
@@ -263,17 +268,45 @@ export default function AdminPage() {
           <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏋️ WODs ({wods.length})</h3>
           <ul className="flex flex-col gap-2">
             {wods.map(w => (
-              <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <strong className="text-white">{w.name}</strong>
-                    <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{w.category?.name}</span>
+              <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex flex-col transition-all">
+                
+                {/* Cabecera del WOD con los botones */}
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-white">{w.name}</strong>
+                      <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{w.category?.name}</span>
+                    </div>
+                    <span className="text-yellow-400 font-bold text-xs mt-1">
+                      {w.type === 'TIME' ? '⏱️ Por Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso (RM)'}
+                    </span>
                   </div>
-                  <span className="text-yellow-400 font-bold text-xs mt-1">
-                    {w.type === 'TIME' ? '⏱️ Por Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso (RM)'}
-                  </span>
+                  
+                  {/* Botones de Acción (Info y Borrar) */}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} 
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold transition"
+                      title="Ver descripción"
+                    >
+                      {expandedWodId === w.id ? '🔼' : 'ℹ️'}
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteWod(w.id)} 
+                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => handleDeleteWod(w.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
+
+                {/* Recuadro Desplegable con la Descripción */}
+                {expandedWodId === w.id && (
+                  <div className="mt-3 p-3 bg-gray-800 rounded border-l-2 border-blue-500 text-gray-300 text-xs whitespace-pre-wrap shadow-inner">
+                    {w.description ? w.description : <span className="italic text-gray-500">Sin descripción cargada.</span>}
+                  </div>
+                )}
+                
               </li>
             ))}
             {wods.length === 0 && <p className="text-gray-500 text-sm text-center">No hay WODs cargados</p>}
