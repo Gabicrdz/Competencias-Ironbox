@@ -18,6 +18,7 @@ model Athlete {
   id         Int      @id @default(autoincrement())
   fullName   String
   boxName    String?
+  gender     String   @default("MASCULINO") // <--- ESTA LÍNEA ES NUEVA
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
   scores     Score[]

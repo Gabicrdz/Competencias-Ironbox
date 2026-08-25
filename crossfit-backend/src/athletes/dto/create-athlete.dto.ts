@@ -1,5 +1,6 @@
 export class CreateAthleteDto {
   fullName!: string;
-  boxName?: string; // El signo de interrogación significa que es opcional
+  boxName?: string;
+  gender!: string; // <--- ESTA LÍNEA ES NUEVA
   categoryId!: number;
 }
