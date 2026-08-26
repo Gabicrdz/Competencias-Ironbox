@@ -16,15 +16,16 @@ export default function AdminPage() {
   const [mensaje, setMensaje] = useState('');
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
 
-  // Control de los formularios superiores
   const [showAthleteForm, setShowAthleteForm] = useState(false); 
   const [showWodForm, setShowWodForm] = useState(false);       
   const [showScoreForm, setShowScoreForm] = useState(true);    
 
-  // NUEVO: Control de las listas de resumen
   const [showAthletesList, setShowAthletesList] = useState(true);
   const [showWodsList, setShowWodsList] = useState(true);
   const [showScoresList, setShowScoresList] = useState(true);
+
+  // NUEVO: Estado para filtrar el resumen inferior por categoría
+  const [activeSummaryCategoryId, setActiveSummaryCategoryId] = useState<number | null>(null);
 
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories')
@@ -34,6 +35,8 @@ export default function AdminPage() {
         if (data.length > 0) {
           setAthleteForm(prev => prev.categoryId ? prev : { ...prev, categoryId: data[0].id.toString() });
           setWodForm(prev => prev.categoryId ? prev : { ...prev, categoryId: data[0].id.toString() });
+          // Seleccionar la primera categoría por defecto para el resumen
+          if (!activeSummaryCategoryId) setActiveSummaryCategoryId(data[0].id);
         }
       })
       .catch(() => {});
@@ -144,21 +147,21 @@ export default function AdminPage() {
     if (res.ok) { fetchData(); }
   };
 
-  // Filtrado en cascada
+  // Filtrado de formularios
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
-  
-  // NUEVO: Atletas ordenados alfabéticamente ANTES de filtrar
   const sortedAthletes = [...athletes].sort((a, b) => a.fullName.localeCompare(b.fullName));
-  
   const filteredAthletes = sortedAthletes.filter(a => {
     const matchGender = scoreFilter.gender ? a.gender === scoreFilter.gender : false;
     const matchCategory = scoreFilter.categoryId ? a.categoryId.toString() === scoreFilter.categoryId : false;
     return matchGender && matchCategory;
   });
-  
   const filteredWods = wods.filter(w => w.categoryId.toString() === scoreFilter.categoryId);
 
-  // CLASES REUTILIZABLES
+  // Filtrado del resumen inferior por la categoría activa
+  const summaryAthletes = sortedAthletes.filter(a => a.categoryId === activeSummaryCategoryId);
+  const summaryWods = wods.filter(w => w.categoryId === activeSummaryCategoryId);
+  const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId);
+
   const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
   const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-100 font-medium";
   const labelClass = "text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider";
@@ -255,7 +258,8 @@ export default function AdminPage() {
         {/* Formulario 3: Puntuación */}
         <div className="bg-white rounded-2xl shadow-xl border-t-4 border-t-[#d91470] overflow-hidden">
             <button type="button" onClick={() => setShowScoreForm(!showScoreForm)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
-              <h2 className="text-xl font-extrabold text-[#1a2b4c]">3. Carga Ágil</h2>
+              {/* NOMBRE CORREGIDO */}
+              <h2 className="text-xl font-extrabold text-[#1a2b4c]">3. Carga de Puntos</h2>
               <span className="text-[#d91470] text-xl">{showScoreForm ? '🔼' : '🔽'}</span>
             </button>
             {showScoreForm && (
@@ -325,52 +329,59 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <hr className="border-gray-200 mb-10 max-w-7xl mx-auto" />
+      <hr className="border-gray-200 mb-8 max-w-7xl mx-auto" />
 
-      <h2 className="text-2xl font-extrabold text-center mb-8 text-[#1a2b4c] uppercase tracking-wide">
+      {/* SECCIÓN RESUMEN CON PESTAÑAS DE CATEGORÍA */}
+      <h2 className="text-2xl font-extrabold text-center mb-6 text-[#1a2b4c] uppercase tracking-wide">
         Resumen de Datos Cargados
       </h2>
+
+      {/* PESTAÑAS DE FILTRO */}
+      <div className="flex flex-wrap justify-center gap-3 mb-8 max-w-7xl mx-auto">
+        {categories.map(category => (
+          <button
+            key={category.id}
+            onClick={() => setActiveSummaryCategoryId(category.id)}
+            className={`px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
+              activeSummaryCategoryId === category.id 
+                ? 'bg-[#1a2b4c] text-white border-[#1a2b4c] shadow-lg scale-105' 
+                : 'bg-white text-[#1a2b4c] border-gray-300 hover:border-[#27aae1]'
+            }`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
       
-      {/* RECUADROS DE RESUMEN (Ahora Desplegables) */}
+      {/* LISTAS FILTRADAS POR CATEGORÍA ACTIVA */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start">
         
         {/* LISTA: ATLETAS */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowAthletesList(!showAthletesList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">
-              🏃 Atletas <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{athletes.length}</span>
+              🏃 Atletas <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryAthletes.length}</span>
             </h3>
             <span className="text-[#27aae1] text-xl">{showAthletesList ? '🔼' : '🔽'}</span>
           </button>
           
           {showAthletesList && (
             <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
-              {categories.map(category => {
-                const catAthletes = sortedAthletes.filter(a => a.categoryId === category.id);
-                if (catAthletes.length === 0) return null;
-                return (
-                  <div key={category.id} className="mb-6 last:mb-0">
-                    <div className="bg-[#1a2b4c] text-white text-[10px] font-bold px-3 py-1 rounded-md mb-3 inline-block uppercase tracking-widest shadow-sm">
-                      {category.name}
+              <ul className="flex flex-col gap-2 mt-2">
+                {summaryAthletes.map(a => (
+                  <li key={a.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-[#1a2b4c] text-sm">{a.fullName}</span>
+                        <span className="text-xs" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
+                      </div>
+                      <span className="text-gray-500 text-xs truncate max-w-[150px]">{a.boxName || 'Independiente'}</span>
                     </div>
-                    <ul className="flex flex-col gap-2">
-                      {catAthletes.map(a => (
-                        <li key={a.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-[#1a2b4c] text-sm">{a.fullName}</span>
-                              <span className="text-xs" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
-                            </div>
-                            <span className="text-gray-500 text-xs truncate max-w-[150px]">{a.boxName || 'Independiente'}</span>
-                          </div>
-                          <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors text-xs">🗑️</button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-              {athletes.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay atletas cargados</p>}
+                    <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors text-xs">🗑️</button>
+                  </li>
+                ))}
+                {summaryAthletes.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay atletas en esta categoría</p>}
+              </ul>
             </div>
           )}
         </div>
@@ -379,50 +390,39 @@ export default function AdminPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowWodsList(!showWodsList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">
-              🏋️ WODs <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{wods.length}</span>
+              🏋️ WODs <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryWods.length}</span>
             </h3>
             <span className="text-[#27aae1] text-xl">{showWodsList ? '🔼' : '🔽'}</span>
           </button>
           
           {showWodsList && (
             <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
-              {categories.map(category => {
-                const catWods = wods.filter(w => w.categoryId === category.id);
-                if (catWods.length === 0) return null;
-                return (
-                  <div key={category.id} className="mb-6 last:mb-0">
-                    <div className="bg-[#1a2b4c] text-white text-[10px] font-bold px-3 py-1 rounded-md mb-3 inline-block uppercase tracking-widest shadow-sm">
-                      {category.name}
+              <ul className="flex flex-col gap-2 mt-2">
+                {summaryWods.map(w => (
+                  <li key={w.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col hover:border-[#27aae1]/30 transition">
+                    <div className="flex justify-between items-start w-full">
+                      <div className="flex flex-col gap-1">
+                        <strong className="text-[#1a2b4c] text-sm leading-tight">{w.name}</strong>
+                        <span className="text-[#d91470] font-bold text-[10px] uppercase bg-pink-50 px-2 py-0.5 rounded inline-block w-max mt-1">
+                          {w.type === 'TIME' ? '⏱️ Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 ml-2">
+                        <button onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} className="bg-[#eaf5fa] text-[#27aae1] hover:bg-[#27aae1] hover:text-white p-1.5 rounded-lg transition-colors text-xs">
+                          {expandedWodId === w.id ? '🔼' : 'ℹ️'}
+                        </button>
+                        <button onClick={() => handleDeleteWod(w.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition-colors text-xs">🗑️</button>
+                      </div>
                     </div>
-                    <ul className="flex flex-col gap-2">
-                      {catWods.map(w => (
-                        <li key={w.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col hover:border-[#27aae1]/30 transition">
-                          <div className="flex justify-between items-start w-full">
-                            <div className="flex flex-col gap-1">
-                              <strong className="text-[#1a2b4c] text-sm leading-tight">{w.name}</strong>
-                              <span className="text-[#d91470] font-bold text-[10px] uppercase bg-pink-50 px-2 py-0.5 rounded inline-block w-max mt-1">
-                                {w.type === 'TIME' ? '⏱️ Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso'}
-                              </span>
-                            </div>
-                            <div className="flex gap-2 ml-2">
-                              <button onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} className="bg-[#eaf5fa] text-[#27aae1] hover:bg-[#27aae1] hover:text-white p-1.5 rounded-lg transition-colors text-xs">
-                                {expandedWodId === w.id ? '🔼' : 'ℹ️'}
-                              </button>
-                              <button onClick={() => handleDeleteWod(w.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition-colors text-xs">🗑️</button>
-                            </div>
-                          </div>
-                          {expandedWodId === w.id && (
-                            <div className="mt-3 p-3 bg-white rounded-lg border-l-4 border-[#27aae1] text-gray-600 text-xs shadow-inner whitespace-pre-wrap font-medium">
-                              {w.description || <span className="italic text-gray-400">Sin descripción</span>}
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-              {wods.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay WODs cargados</p>}
+                    {expandedWodId === w.id && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border-l-4 border-[#27aae1] text-gray-600 text-xs shadow-inner whitespace-pre-wrap font-medium">
+                        {w.description || <span className="italic text-gray-400">Sin descripción</span>}
+                      </div>
+                    )}
+                  </li>
+                ))}
+                {summaryWods.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay WODs en esta categoría</p>}
+              </ul>
             </div>
           )}
         </div>
@@ -431,45 +431,34 @@ export default function AdminPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowScoresList(!showScoresList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">
-              📝 Puntuaciones <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{scores.length}</span>
+              📝 Puntuaciones <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryScores.length}</span>
             </h3>
             <span className="text-[#27aae1] text-xl">{showScoresList ? '🔼' : '🔽'}</span>
           </button>
           
           {showScoresList && (
             <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
-              {categories.map(category => {
-                const catScores = scores.filter(s => s.wod?.categoryId === category.id);
-                if (catScores.length === 0) return null;
-                return (
-                  <div key={category.id} className="mb-6 last:mb-0">
-                    <div className="bg-[#1a2b4c] text-white text-[10px] font-bold px-3 py-1 rounded-md mb-3 inline-block uppercase tracking-widest shadow-sm">
-                      {category.name}
+              <ul className="flex flex-col gap-2 mt-2">
+                {summaryScores.map(s => (
+                  <li key={s.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
+                    <div className="flex flex-col w-full mr-3 gap-1">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-[#1a2b4c] text-sm truncate max-w-[120px]">{s.athlete?.fullName}</span>
+                          <span className="text-[10px]">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
+                        </div>
+                        <span className="text-[#d91470] font-black bg-pink-50 px-2 py-0.5 rounded text-[10px] whitespace-nowrap">{s.resultString}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="text-gray-500 font-medium truncate max-w-[100px]">{s.wod?.name}</span>
+                        <span className="font-bold text-[#27aae1]">Pos: {s.position}º | {s.points} pts</span>
+                      </div>
                     </div>
-                    <ul className="flex flex-col gap-2">
-                      {catScores.map(s => (
-                        <li key={s.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
-                          <div className="flex flex-col w-full mr-3 gap-1">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-[#1a2b4c] text-sm truncate max-w-[120px]">{s.athlete?.fullName}</span>
-                                <span className="text-[10px]">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
-                              </div>
-                              <span className="text-[#d91470] font-black bg-pink-50 px-2 py-0.5 rounded text-[10px] whitespace-nowrap">{s.resultString}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[10px]">
-                              <span className="text-gray-500 font-medium truncate max-w-[100px]">{s.wod?.name}</span>
-                              <span className="font-bold text-[#27aae1]">Pos: {s.position}º | {s.points} pts</span>
-                            </div>
-                          </div>
-                          <button onClick={() => handleDeleteScore(s.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition-colors text-xs">🗑️</button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-              {scores.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay puntuaciones cargadas</p>}
+                    <button onClick={() => handleDeleteScore(s.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition-colors text-xs">🗑️</button>
+                  </li>
+                ))}
+                {summaryScores.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay puntuaciones en esta categoría</p>}
+              </ul>
             </div>
           )}
         </div>
