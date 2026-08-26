@@ -24,8 +24,9 @@ export default function AdminPage() {
   const [showWodsList, setShowWodsList] = useState(true);
   const [showScoresList, setShowScoresList] = useState(true);
 
-  // NUEVO: Estado para filtrar el resumen inferior por categoría
+  // Estados para filtrar el resumen inferior (Categoría + Género)
   const [activeSummaryCategoryId, setActiveSummaryCategoryId] = useState<number | null>(null);
+  const [activeSummaryGender, setActiveSummaryGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
 
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories')
@@ -35,7 +36,6 @@ export default function AdminPage() {
         if (data.length > 0) {
           setAthleteForm(prev => prev.categoryId ? prev : { ...prev, categoryId: data[0].id.toString() });
           setWodForm(prev => prev.categoryId ? prev : { ...prev, categoryId: data[0].id.toString() });
-          // Seleccionar la primera categoría por defecto para el resumen
           if (!activeSummaryCategoryId) setActiveSummaryCategoryId(data[0].id);
         }
       })
@@ -147,9 +147,10 @@ export default function AdminPage() {
     if (res.ok) { fetchData(); }
   };
 
-  // Filtrado de formularios
+  // Lógica general de filtrado
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
   const sortedAthletes = [...athletes].sort((a, b) => a.fullName.localeCompare(b.fullName));
+  
   const filteredAthletes = sortedAthletes.filter(a => {
     const matchGender = scoreFilter.gender ? a.gender === scoreFilter.gender : false;
     const matchCategory = scoreFilter.categoryId ? a.categoryId.toString() === scoreFilter.categoryId : false;
@@ -157,10 +158,11 @@ export default function AdminPage() {
   });
   const filteredWods = wods.filter(w => w.categoryId.toString() === scoreFilter.categoryId);
 
-  // Filtrado del resumen inferior por la categoría activa
-  const summaryAthletes = sortedAthletes.filter(a => a.categoryId === activeSummaryCategoryId);
+  // NUEVO: Filtrado del resumen inferior por Categoría Y Género
+  const summaryAthletes = sortedAthletes.filter(a => a.categoryId === activeSummaryCategoryId && a.gender === activeSummaryGender);
+  // Los WODs no tienen género, solo categoría
   const summaryWods = wods.filter(w => w.categoryId === activeSummaryCategoryId);
-  const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId);
+  const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId && s.athlete?.gender === activeSummaryGender);
 
   const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
   const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-100 font-medium";
@@ -258,7 +260,6 @@ export default function AdminPage() {
         {/* Formulario 3: Puntuación */}
         <div className="bg-white rounded-2xl shadow-xl border-t-4 border-t-[#d91470] overflow-hidden">
             <button type="button" onClick={() => setShowScoreForm(!showScoreForm)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
-              {/* NOMBRE CORREGIDO */}
               <h2 className="text-xl font-extrabold text-[#1a2b4c]">3. Carga de Puntos</h2>
               <span className="text-[#d91470] text-xl">{showScoreForm ? '🔼' : '🔽'}</span>
             </button>
@@ -331,13 +332,12 @@ export default function AdminPage() {
 
       <hr className="border-gray-200 mb-8 max-w-7xl mx-auto" />
 
-      {/* SECCIÓN RESUMEN CON PESTAÑAS DE CATEGORÍA */}
       <h2 className="text-2xl font-extrabold text-center mb-6 text-[#1a2b4c] uppercase tracking-wide">
         Resumen de Datos Cargados
       </h2>
 
-      {/* PESTAÑAS DE FILTRO */}
-      <div className="flex flex-wrap justify-center gap-3 mb-8 max-w-7xl mx-auto">
+      {/* FILTROS SUPERIORES: CATEGORÍAS */}
+      <div className="flex flex-wrap justify-center gap-3 mb-4 max-w-7xl mx-auto">
         {categories.map(category => (
           <button
             key={category.id}
@@ -352,8 +352,32 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* FILTROS SUPERIORES: GÉNERO */}
+      <div className="flex justify-center gap-4 mb-8 max-w-7xl mx-auto">
+        <button
+          onClick={() => setActiveSummaryGender('MASCULINO')}
+          className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
+            activeSummaryGender === 'MASCULINO'
+              ? 'bg-[#27aae1] border-[#27aae1] text-white shadow-md'
+              : 'bg-white border-gray-300 text-gray-500 hover:border-[#27aae1] hover:text-[#27aae1]'
+          }`}
+        >
+          🚹 Masculino
+        </button>
+        <button
+          onClick={() => setActiveSummaryGender('FEMENINO')}
+          className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all duration-300 border-2 ${
+            activeSummaryGender === 'FEMENINO'
+              ? 'bg-[#d91470] border-[#d91470] text-white shadow-md'
+              : 'bg-white border-gray-300 text-gray-500 hover:border-[#d91470] hover:text-[#d91470]'
+          }`}
+        >
+          🚺 Femenino
+        </button>
+      </div>
       
-      {/* LISTAS FILTRADAS POR CATEGORÍA ACTIVA */}
+      {/* LISTAS FILTRADAS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start">
         
         {/* LISTA: ATLETAS */}
@@ -373,14 +397,13 @@ export default function AdminPage() {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-[#1a2b4c] text-sm">{a.fullName}</span>
-                        <span className="text-xs" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
                       </div>
                       <span className="text-gray-500 text-xs truncate max-w-[150px]">{a.boxName || 'Independiente'}</span>
                     </div>
                     <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors text-xs">🗑️</button>
                   </li>
                 ))}
-                {summaryAthletes.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay atletas en esta categoría</p>}
+                {summaryAthletes.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay atletas en esta categoría y género</p>}
               </ul>
             </div>
           )}
@@ -445,7 +468,6 @@ export default function AdminPage() {
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-1">
                           <span className="font-bold text-[#1a2b4c] text-sm truncate max-w-[120px]">{s.athlete?.fullName}</span>
-                          <span className="text-[10px]">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
                         </div>
                         <span className="text-[#d91470] font-black bg-pink-50 px-2 py-0.5 rounded text-[10px] whitespace-nowrap">{s.resultString}</span>
                       </div>
@@ -457,7 +479,7 @@ export default function AdminPage() {
                     <button onClick={() => handleDeleteScore(s.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-1.5 rounded-lg transition-colors text-xs">🗑️</button>
                   </li>
                 ))}
-                {summaryScores.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay puntuaciones en esta categoría</p>}
+                {summaryScores.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-2">No hay puntuaciones cargadas</p>}
               </ul>
             </div>
           )}
