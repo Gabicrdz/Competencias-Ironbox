@@ -16,10 +16,9 @@ export default function AdminPage() {
   const [mensaje, setMensaje] = useState('');
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
 
-  // NUEVO: Estados para controlar si los formularios están abiertos o cerrados
-  const [showAthleteForm, setShowAthleteForm] = useState(false); // Cerrado por defecto
-  const [showWodForm, setShowWodForm] = useState(false);       // Cerrado por defecto
-  const [showScoreForm, setShowScoreForm] = useState(true);    // Abierto por defecto (el más usado)
+  const [showAthleteForm, setShowAthleteForm] = useState(false); 
+  const [showWodForm, setShowWodForm] = useState(false);       
+  const [showScoreForm, setShowScoreForm] = useState(true);    
 
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories')
@@ -58,8 +57,10 @@ export default function AdminPage() {
       setMensaje('¡Atleta registrado con éxito!');
       setAthleteForm({ fullName: '', boxName: '', gender: 'MASCULINO', categoryId: categories[0]?.id.toString() || '' });
       fetchData();
+      setTimeout(() => setMensaje(''), 3000);
     } else {
       setMensaje('Error al registrar atleta');
+      setTimeout(() => setMensaje(''), 3000);
     }
   };
 
@@ -74,6 +75,7 @@ export default function AdminPage() {
       setMensaje('¡WOD creado con éxito!');
       setWodForm({ name: '', description: '', type: 'TIME', categoryId: categories[0]?.id.toString() || '' });
       fetchData();
+      setTimeout(() => setMensaje(''), 3000);
     }
   };
 
@@ -116,6 +118,7 @@ export default function AdminPage() {
       setMensaje('¡Puntuación cargada con éxito!');
       setScoreForm({ ...scoreForm, athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
       fetchData();
+      setTimeout(() => setMensaje(''), 3000);
     }
   };
 
@@ -143,142 +146,190 @@ export default function AdminPage() {
   });
   const filteredWods = wods.filter(w => w.categoryId.toString() === scoreFilter.categoryId);
 
+  // CLASES REUTILIZABLES PARA EL NUEVO DISEÑO
+  const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
+  const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-100 font-medium";
+  const labelClass = "text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider";
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-blue-500 mb-8 text-center">Panel de Administración</h1>
+    <div className="min-h-screen bg-[#eaf5fa] text-[#1a2b4c] p-4 md:p-8 font-sans">
+      
+      <h1 className="text-3xl md:text-4xl font-extrabold text-[#1a2b4c] mb-8 text-center uppercase tracking-tight">
+        Panel de <span className="text-[#d91470]">Administración</span>
+      </h1>
 
       {mensaje && (
-        <div className="bg-green-500 text-white p-4 rounded mb-8 text-center font-bold transition">
+        <div className="max-w-4xl mx-auto bg-[#27aae1] text-white p-4 rounded-xl mb-8 text-center font-bold shadow-lg animate-pulse">
           {mensaje}
         </div>
       )}
 
-      {/* CONTENEDOR DE FORMULARIOS: "items-start" evita que se estiren de forma desigual en PC */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-start">
+      {/* CONTENEDOR DE FORMULARIOS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-start max-w-7xl mx-auto">
         
         {/* ======================================= */}
-        {/* Formulario 1: Atleta (DESPLEGABLE)      */}
+        {/* Formulario 1: Atleta                    */}
         {/* ======================================= */}
-        <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <button 
               type="button"
               onClick={() => setShowAthleteForm(!showAthleteForm)} 
-              className="w-full flex justify-between items-center p-5 bg-gray-800 hover:bg-gray-700 transition-colors"
+              className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors"
             >
-              <h2 className="text-xl font-bold text-blue-400">1. Registrar Atleta</h2>
-              <span className="text-gray-400 text-xl">{showAthleteForm ? '🔼' : '🔽'}</span>
+              <h2 className="text-xl font-extrabold text-[#1a2b4c]">1. Registrar Atleta</h2>
+              <span className="text-[#27aae1] text-xl">{showAthleteForm ? '🔼' : '🔽'}</span>
             </button>
             
             {showAthleteForm && (
-              <div className="p-5 pt-2 border-t border-gray-700">
-                <form onSubmit={handleCreateAthlete} className="flex flex-col gap-4">
-                  <input className="p-2 bg-gray-700 rounded text-white" placeholder="Nombre completo" value={athleteForm.fullName} onChange={e => setAthleteForm({...athleteForm, fullName: e.target.value})} required />
-                  <input className="p-2 bg-gray-700 rounded text-white" placeholder="Box (Opcional)" value={athleteForm.boxName} onChange={e => setAthleteForm({...athleteForm, boxName: e.target.value})} />
-                  
-                  <select className="p-2 bg-gray-700 rounded text-white font-bold" value={athleteForm.gender} onChange={e => setAthleteForm({...athleteForm, gender: e.target.value})} required>
-                    <option value="MASCULINO">🚹 Masculino</option>
-                    <option value="FEMENINO">🚺 Femenino</option>
-                  </select>
-
-                  <select className="p-2 bg-gray-700 rounded text-white" value={athleteForm.categoryId} onChange={e => setAthleteForm({...athleteForm, categoryId: e.target.value})} required>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  <button type="submit" className="bg-blue-600 p-2 rounded font-bold hover:bg-blue-700 transition">Guardar Atleta</button>
-                </form>
-              </div>
-            )}
-        </div>
-
-        {/* ======================================= */}
-        {/* Formulario 2: WOD (DESPLEGABLE)         */}
-        {/* ======================================= */}
-        <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-            <button 
-              type="button"
-              onClick={() => setShowWodForm(!showWodForm)} 
-              className="w-full flex justify-between items-center p-5 bg-gray-800 hover:bg-gray-700 transition-colors"
-            >
-              <h2 className="text-xl font-bold text-blue-400">2. Crear WOD</h2>
-              <span className="text-gray-400 text-xl">{showWodForm ? '🔼' : '🔽'}</span>
-            </button>
-            
-            {showWodForm && (
-              <div className="p-5 pt-2 border-t border-gray-700">
-                <form onSubmit={handleCreateWod} className="flex flex-col gap-4">
-                  <input className="p-2 bg-gray-700 rounded text-white" placeholder="Nombre (Ej: WOD 1)" value={wodForm.name} onChange={e => setWodForm({...wodForm, name: e.target.value})} required />
-                  <textarea className="p-2 bg-gray-700 rounded text-white resize-y min-h-[80px]" placeholder="Descripción detallada del WOD..." value={wodForm.description} onChange={e => setWodForm({...wodForm, description: e.target.value})} />
-                  <select className="p-2 bg-gray-700 rounded text-white font-bold text-blue-300" value={wodForm.type} onChange={e => setWodForm({...wodForm, type: e.target.value})} required>
-                    <option value="TIME">⏱️ Por Tiempo (For Time)</option>
-                    <option value="REPS">🔄 Máximas Reps (AMRAP)</option>
-                    <option value="WEIGHT">🏋️ Peso Máximo (RM)</option>
-                  </select>
-                  <select className="p-2 bg-gray-700 rounded text-white" value={wodForm.categoryId} onChange={e => setWodForm({...wodForm, categoryId: e.target.value})} required>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  <button type="submit" className="bg-blue-600 p-2 rounded font-bold hover:bg-blue-700 transition">Guardar WOD</button>
-                </form>
-              </div>
-            )}
-        </div>
-
-        {/* ======================================= */}
-        {/* Formulario 3: Puntuación (DESPLEGABLE)  */}
-        {/* ======================================= */}
-        <div className="bg-gray-800 rounded-lg shadow-lg border-l-4 border-blue-500 overflow-hidden">
-            <button 
-              type="button"
-              onClick={() => setShowScoreForm(!showScoreForm)} 
-              className="w-full flex justify-between items-center p-5 bg-gray-800 hover:bg-gray-700 transition-colors"
-            >
-              <h2 className="text-xl font-bold text-blue-400">3. Carga de Puntos</h2>
-              <span className="text-gray-400 text-xl">{showScoreForm ? '🔼' : '🔽'}</span>
-            </button>
-            
-            {showScoreForm && (
-              <div className="p-5 pt-2 border-t border-gray-700">
-                <form onSubmit={handleCreateScore} className="flex flex-col gap-4">
-                  <div className="flex gap-2">
-                    <select className="w-1/2 p-2 bg-gray-700 rounded text-white text-sm" value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
-                      <option value="">1. Género...</option>
+              <div className="p-5 pt-0 border-t border-gray-100 mt-2">
+                <form onSubmit={handleCreateAthlete} className="flex flex-col gap-4 mt-4">
+                  <div>
+                    <label className={labelClass}>Nombre Completo</label>
+                    <input className={inputClass} placeholder="Ej: Juan Pérez" value={athleteForm.fullName} onChange={e => setAthleteForm({...athleteForm, fullName: e.target.value})} required />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Box (Opcional)</label>
+                    <input className={inputClass} placeholder="Ej: Iron Box" value={athleteForm.boxName} onChange={e => setAthleteForm({...athleteForm, boxName: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Género</label>
+                    <select className={selectClass} value={athleteForm.gender} onChange={e => setAthleteForm({...athleteForm, gender: e.target.value})} required>
                       <option value="MASCULINO">🚹 Masculino</option>
                       <option value="FEMENINO">🚺 Femenino</option>
                     </select>
-                    <select className={`w-1/2 p-2 rounded text-white text-sm transition ${scoreFilter.gender ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!scoreFilter.gender}>
-                      <option value="">2. Categoría...</option>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Categoría</label>
+                    <select className={selectClass} value={athleteForm.categoryId} onChange={e => setAthleteForm({...athleteForm, categoryId: e.target.value})} required>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+                  <button type="submit" className="mt-2 bg-[#1a2b4c] text-white p-3 rounded-xl font-bold hover:bg-[#1a2b4c]/90 transition shadow-md">Guardar Atleta</button>
+                </form>
+              </div>
+            )}
+        </div>
 
-                  <select className={`p-2 rounded text-white transition ${scoreFilter.categoryId ? 'bg-gray-700 border border-green-500' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'}`} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required disabled={!scoreFilter.categoryId}>
-                    <option value="">{scoreFilter.categoryId ? '3. Seleccionar Atleta...' : '👈 Primero completa los filtros'}</option>
-                    {filteredAthletes.map(a => <option key={a.id} value={a.id}>{a.fullName} {a.boxName ? `(${a.boxName})` : ''}</option>)}
-                  </select>
+        {/* ======================================= */}
+        {/* Formulario 2: WOD                       */}
+        {/* ======================================= */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <button 
+              type="button"
+              onClick={() => setShowWodForm(!showWodForm)} 
+              className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="text-xl font-extrabold text-[#1a2b4c]">2. Crear WOD</h2>
+              <span className="text-[#27aae1] text-xl">{showWodForm ? '🔼' : '🔽'}</span>
+            </button>
+            
+            {showWodForm && (
+              <div className="p-5 pt-0 border-t border-gray-100 mt-2">
+                <form onSubmit={handleCreateWod} className="flex flex-col gap-4 mt-4">
+                  <div>
+                    <label className={labelClass}>Nombre del WOD</label>
+                    <input className={inputClass} placeholder="Ej: WOD 1 - Final" value={wodForm.name} onChange={e => setWodForm({...wodForm, name: e.target.value})} required />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Descripción</label>
+                    <textarea className={`${inputClass} resize-y min-h-[80px]`} placeholder="Detalles del WOD..." value={wodForm.description} onChange={e => setWodForm({...wodForm, description: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Tipo de Medición</label>
+                    <select className={`${selectClass} text-[#d91470] font-bold`} value={wodForm.type} onChange={e => setWodForm({...wodForm, type: e.target.value})} required>
+                      <option value="TIME">⏱️ Por Tiempo (For Time)</option>
+                      <option value="REPS">🔄 Máximas Reps (AMRAP)</option>
+                      <option value="WEIGHT">🏋️ Peso Máximo (RM)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Categoría</label>
+                    <select className={selectClass} value={wodForm.categoryId} onChange={e => setWodForm({...wodForm, categoryId: e.target.value})} required>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <button type="submit" className="mt-2 bg-[#1a2b4c] text-white p-3 rounded-xl font-bold hover:bg-[#1a2b4c]/90 transition shadow-md">Guardar WOD</button>
+                </form>
+              </div>
+            )}
+        </div>
+
+        {/* ======================================= */}
+        {/* Formulario 3: Puntuación                */}
+        {/* ======================================= */}
+        <div className="bg-white rounded-2xl shadow-xl border-t-4 border-t-[#d91470] overflow-hidden">
+            <button 
+              type="button"
+              onClick={() => setShowScoreForm(!showScoreForm)} 
+              className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="text-xl font-extrabold text-[#1a2b4c]">3. Carga Ágil</h2>
+              <span className="text-[#d91470] text-xl">{showScoreForm ? '🔼' : '🔽'}</span>
+            </button>
+            
+            {showScoreForm && (
+              <div className="p-5 pt-0 border-t border-gray-100 mt-2">
+                <form onSubmit={handleCreateScore} className="flex flex-col gap-4 mt-4">
                   
-                  <select className={`p-2 rounded text-white transition ${scoreForm.athleteId ? 'bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required disabled={!scoreForm.athleteId}>
-                    <option value="">{scoreForm.athleteId ? '4. Seleccionar WOD...' : '👈 Luego selecciona el atleta'}</option>
-                    {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
+                  {/* FILTROS EN CASCADA */}
+                  <div className="flex gap-3">
+                    <div className="w-1/2">
+                      <label className={labelClass}>1. Género</label>
+                      <select className={selectClass} value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
+                        <option value="">Seleccionar...</option>
+                        <option value="MASCULINO">🚹 Masculino</option>
+                        <option value="FEMENINO">🚺 Femenino</option>
+                      </select>
+                    </div>
+                    <div className="w-1/2">
+                      <label className={labelClass}>2. Categoría</label>
+                      <select className={selectClass} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!scoreFilter.gender}>
+                        <option value="">Seleccionar...</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
 
+                  <div>
+                    <label className={labelClass}>3. Atleta</label>
+                    <select className={selectClass} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required disabled={!scoreFilter.categoryId}>
+                      <option value="">{scoreFilter.categoryId ? 'Seleccionar Atleta...' : 'Filtra arriba primero'}</option>
+                      {filteredAthletes.map(a => <option key={a.id} value={a.id}>{a.fullName} {a.boxName ? `(${a.boxName})` : ''}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className={labelClass}>4. Seleccionar WOD</label>
+                    <select className={selectClass} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required disabled={!scoreForm.athleteId}>
+                      <option value="">{scoreForm.athleteId ? 'Seleccionar WOD...' : 'Selecciona un atleta'}</option>
+                      {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </div>
+
+                  {/* INPUTS DINÁMICOS */}
                   {currentWod?.type === 'TIME' && (
-                    <div className="flex gap-2 bg-gray-900 p-2 rounded border border-gray-600">
+                    <div className="flex gap-3 bg-[#eaf5fa] p-3 rounded-xl border border-[#27aae1]/30">
                       <div className="w-1/2 flex flex-col">
-                        <label className="text-xs text-gray-400 mb-1">Minutos</label>
-                        <input type="number" className="p-2 bg-gray-700 rounded text-white" placeholder="00" value={scoreForm.minutes} onChange={e => setScoreForm({...scoreForm, minutes: e.target.value})} required />
+                        <label className="text-xs font-bold text-[#1a2b4c] mb-1 uppercase">Minutos</label>
+                        <input type="number" className="p-2.5 bg-white border border-[#27aae1]/50 rounded-lg text-[#1a2b4c] font-bold text-center outline-none focus:ring-2 focus:ring-[#27aae1]" placeholder="00" value={scoreForm.minutes} onChange={e => setScoreForm({...scoreForm, minutes: e.target.value})} required />
                       </div>
                       <div className="w-1/2 flex flex-col">
-                        <label className="text-xs text-gray-400 mb-1">Segundos</label>
-                        <input type="number" className="p-2 bg-gray-700 rounded text-white" placeholder="00" value={scoreForm.seconds} onChange={e => setScoreForm({...scoreForm, seconds: e.target.value})} required max="59" />
+                        <label className="text-xs font-bold text-[#1a2b4c] mb-1 uppercase">Segundos</label>
+                        <input type="number" className="p-2.5 bg-white border border-[#27aae1]/50 rounded-lg text-[#1a2b4c] font-bold text-center outline-none focus:ring-2 focus:ring-[#27aae1]" placeholder="00" value={scoreForm.seconds} onChange={e => setScoreForm({...scoreForm, seconds: e.target.value})} required max="59" />
                       </div>
                     </div>
                   )}
                   {(currentWod?.type === 'REPS' || currentWod?.type === 'WEIGHT') && (
-                    <div className="flex flex-col bg-gray-900 p-2 rounded border border-gray-600">
-                      <label className="text-xs text-gray-400 mb-1">Resultado (Reps o Kilos)</label>
-                      <input type="number" className="p-2 bg-gray-700 rounded text-white" placeholder="Ej: 120" value={scoreForm.result} onChange={e => setScoreForm({...scoreForm, result: e.target.value})} required />
+                    <div className="flex flex-col bg-[#eaf5fa] p-3 rounded-xl border border-[#27aae1]/30">
+                      <label className="text-xs font-bold text-[#1a2b4c] mb-1 uppercase text-center">
+                        {currentWod.type === 'REPS' ? 'Total de Repeticiones' : 'Kilos Levantados'}
+                      </label>
+                      <input type="number" className="p-2.5 bg-white border border-[#27aae1]/50 rounded-lg text-[#1a2b4c] font-bold text-center text-lg outline-none focus:ring-2 focus:ring-[#27aae1]" placeholder="Ej: 120" value={scoreForm.result} onChange={e => setScoreForm({...scoreForm, result: e.target.value})} required />
                     </div>
                   )}
-                  <button type="submit" disabled={!currentWod} className={`p-2 rounded font-bold transition ${currentWod ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
-                    {currentWod ? 'Guardar Puntaje' : 'Selecciona un WOD'}
+                  
+                  <button type="submit" disabled={!currentWod} className={`mt-2 p-3 rounded-xl font-extrabold transition shadow-md ${currentWod ? 'bg-[#d91470] hover:bg-[#b0105a] text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                    {currentWod ? 'Guardar Puntaje' : 'Esperando datos...'}
                   </button>
                 </form>
               </div>
@@ -286,86 +337,99 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <hr className="border-gray-700 mb-12" />
+      <hr className="border-gray-200 mb-10 max-w-7xl mx-auto" />
 
-      {/* RECUADROS DE RESUMEN (Listas) */}
-      <h2 className="text-2xl font-bold text-center mb-8 text-gray-300">Resumen de Datos Cargados</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* RECUADROS DE RESUMEN */}
+      <h2 className="text-2xl font-extrabold text-center mb-8 text-[#1a2b4c] uppercase tracking-wide">
+        Resumen de Datos Cargados
+      </h2>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         
         {/* Atletas */}
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg overflow-auto max-h-96 border border-gray-700">
-          <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏃 Atletas ({athletes.length})</h3>
-          <ul className="flex flex-col gap-2">
+        <div className="bg-white p-5 rounded-2xl shadow-lg overflow-auto max-h-[500px] border border-gray-200 scrollbar-hide">
+          <h3 className="font-extrabold text-lg mb-4 border-b border-gray-100 pb-3 text-[#1a2b4c] flex items-center gap-2">
+            🏃 Atletas <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{athletes.length}</span>
+          </h3>
+          <ul className="flex flex-col gap-3">
             {athletes.map(a => (
-              <li key={a.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
+              <li key={a.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center transition hover:border-[#27aae1]/30">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{a.fullName}</span>
-                    <span className="text-xl" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
-                    <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{a.category?.name}</span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-[#1a2b4c]">{a.fullName}</span>
+                    <span className="text-sm" title={a.gender}>{a.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
                   </div>
-                  <span className="text-gray-400 text-xs mt-1">🏢 Box: {a.boxName ? a.boxName : 'Independiente'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#1a2b4c] text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">{a.category?.name}</span>
+                    <span className="text-gray-500 text-xs truncate max-w-[120px]">{a.boxName || 'Independiente'}</span>
+                  </div>
                 </div>
-                <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
+                <button onClick={() => handleDeleteAthlete(a.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors">🗑️</button>
               </li>
             ))}
-            {athletes.length === 0 && <p className="text-gray-500 text-sm text-center">No hay atletas cargados</p>}
+            {athletes.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-4">No hay atletas cargados</p>}
           </ul>
         </div>
 
         {/* WODs */}
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg overflow-auto max-h-96 border border-gray-700">
-          <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">🏋️ WODs ({wods.length})</h3>
-          <ul className="flex flex-col gap-2">
+        <div className="bg-white p-5 rounded-2xl shadow-lg overflow-auto max-h-[500px] border border-gray-200">
+          <h3 className="font-extrabold text-lg mb-4 border-b border-gray-100 pb-3 text-[#1a2b4c] flex items-center gap-2">
+            🏋️ WODs <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{wods.length}</span>
+          </h3>
+          <ul className="flex flex-col gap-3">
             {wods.map(w => (
-              <li key={w.id} className="bg-gray-700 p-3 rounded text-sm flex flex-col transition-all">
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <strong className="text-white">{w.name}</strong>
-                      <span className="text-blue-300 text-xs bg-gray-900 px-2 py-1 rounded">{w.category?.name}</span>
+              <li key={w.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col transition hover:border-[#27aae1]/30">
+                <div className="flex justify-between items-start w-full">
+                  <div className="flex flex-col gap-1">
+                    <strong className="text-[#1a2b4c] leading-tight">{w.name}</strong>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="bg-[#1a2b4c] text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">{w.category?.name}</span>
+                      <span className="text-[#d91470] font-bold text-[10px] uppercase bg-pink-50 px-2 py-0.5 rounded">{w.type === 'TIME' ? '⏱️ Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso'}</span>
                     </div>
-                    <span className="text-yellow-400 font-bold text-xs mt-1">{w.type === 'TIME' ? '⏱️ Por Tiempo' : w.type === 'REPS' ? '🔄 AMRAP' : '🏋️ Peso (RM)'}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold transition">
+                  <div className="flex gap-2 ml-2">
+                    <button onClick={() => setExpandedWodId(expandedWodId === w.id ? null : w.id)} className="bg-[#eaf5fa] text-[#27aae1] hover:bg-[#27aae1] hover:text-white p-2 rounded-lg transition-colors">
                       {expandedWodId === w.id ? '🔼' : 'ℹ️'}
                     </button>
-                    <button onClick={() => handleDeleteWod(w.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
+                    <button onClick={() => handleDeleteWod(w.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors">🗑️</button>
                   </div>
                 </div>
                 {expandedWodId === w.id && (
-                  <div className="mt-3 p-3 bg-gray-800 rounded border-l-2 border-blue-500 text-gray-300 text-xs whitespace-pre-wrap shadow-inner">{w.description}</div>
+                  <div className="mt-3 p-3 bg-white rounded-lg border-l-4 border-[#27aae1] text-gray-600 text-xs shadow-inner whitespace-pre-wrap font-medium">
+                    {w.description || <span className="italic text-gray-400">Sin descripción</span>}
+                  </div>
                 )}
               </li>
             ))}
-            {wods.length === 0 && <p className="text-gray-500 text-sm text-center">No hay WODs cargados</p>}
+            {wods.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-4">No hay WODs cargados</p>}
           </ul>
         </div>
 
         {/* Puntuaciones */}
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg overflow-auto max-h-96 border border-gray-700">
-          <h3 className="font-bold text-lg mb-4 border-b border-gray-600 pb-2 text-blue-300">📝 Puntuaciones ({scores.length})</h3>
-          <ul className="flex flex-col gap-2">
+        <div className="bg-white p-5 rounded-2xl shadow-lg overflow-auto max-h-[500px] border border-gray-200">
+          <h3 className="font-extrabold text-lg mb-4 border-b border-gray-100 pb-3 text-[#1a2b4c] flex items-center gap-2">
+            📝 Puntuaciones <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{scores.length}</span>
+          </h3>
+          <ul className="flex flex-col gap-3">
             {scores.map(s => (
-              <li key={s.id} className="bg-gray-700 p-3 rounded text-sm flex justify-between items-center">
-                <div className="flex flex-col w-full mr-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-green-400">{s.athlete?.fullName}</span>
-                      <span className="text-sm">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
+              <li key={s.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center transition hover:border-[#27aae1]/30">
+                <div className="flex flex-col w-full mr-3 gap-1">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-1">
+                      <span className="font-extrabold text-[#1a2b4c] truncate max-w-[140px]">{s.athlete?.fullName}</span>
+                      <span className="text-xs">{s.athlete?.gender === 'MASCULINO' ? '🚹' : '🚺'}</span>
                     </div>
-                    <span className="text-yellow-400 font-bold bg-gray-800 px-2 rounded text-xs">{s.resultString}</span>
+                    <span className="text-[#d91470] font-black bg-pink-50 px-2 py-0.5 rounded text-xs whitespace-nowrap">{s.resultString}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-gray-300 mt-1">
-                    <span className="bg-gray-800 px-2 py-1 rounded">{s.wod?.name} - {s.wod?.category?.name}</span>
-                    <span className="font-bold text-blue-300">Pos: {s.position}º | {s.points} pts</span>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-gray-500 font-medium truncate max-w-[120px]">{s.wod?.name}</span>
+                    <span className="font-bold text-[#27aae1]">Pos: {s.position}º | {s.points} pts</span>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteScore(s.id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-bold transition">🗑️</button>
+                <button onClick={() => handleDeleteScore(s.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors">🗑️</button>
               </li>
             ))}
-            {scores.length === 0 && <p className="text-gray-500 text-sm text-center">No hay puntuaciones cargadas</p>}
+            {scores.length === 0 && <p className="text-gray-400 text-sm text-center italic mt-4">No hay puntuaciones cargadas</p>}
           </ul>
         </div>
       </div>
