@@ -11,6 +11,21 @@ export class ScoresController {
     return this.scoresService.create(createScoreDto);
   }
 
+  // --- INICIO MODO SUSPENSO ---
+  private static isLeaderboardFrozen = false;
+
+  @Get('freeze/status')
+  getFreezeStatus() {
+    return { isFrozen: ScoresController.isLeaderboardFrozen };
+  }
+
+  @Post('freeze/toggle')
+  toggleFreeze(@Body() body: { isFrozen: boolean }) {
+    ScoresController.isLeaderboardFrozen = body.isFrozen;
+    return { isFrozen: ScoresController.isLeaderboardFrozen };
+  }
+  // --- FIN MODO SUSPENSO ---
+
   @Get()
   findAll() {
     return this.scoresService.findAll();
