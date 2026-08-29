@@ -15,7 +15,7 @@ export default function AdminPage() {
   const [editingAthleteId, setEditingAthleteId] = useState<number | null>(null);
   const [editingWodId, setEditingWodId] = useState<number | null>(null);
   const [editingScoreId, setEditingScoreId] = useState<number | null>(null);
-
+  const [isFrozen, setIsFrozen] = useState(false);
   const [scoreFilter, setScoreFilter] = useState({ gender: '', categoryId: '' });
   const [mensaje, setMensaje] = useState('');
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
@@ -41,6 +41,7 @@ export default function AdminPage() {
           if (!activeSummaryCategoryId) setActiveSummaryCategoryId(data[0].id);
         }
       }).catch(() => {});
+    fetch('https://competencias-ironbox-api.onrender.com/scores/freeze/status').then(res => res.json()).then(data => setIsFrozen(data.isFrozen)).catch(() => {});  
     fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()).then(data => setAthletes(data)).catch(() => {});
     fetch('https://competencias-ironbox-api.onrender.com/wods').then(res => res.json()).then(data => setWods(data)).catch(() => {});
     fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json()).then(data => setScores(data)).catch(() => {});
@@ -51,6 +52,19 @@ export default function AdminPage() {
   const mostrarMensaje = (msg: string) => {
     setMensaje(msg);
     setTimeout(() => setMensaje(''), 3000);
+  };
+
+  const handleToggleFreeze = async () => {
+    const newStatus = !isFrozen;
+    const res = await fetch('https://competencias-ironbox-api.onrender.com/scores/freeze/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isFrozen: newStatus })
+    });
+    if (res.ok) {
+      setIsFrozen(newStatus);
+      mostrarMensaje(newStatus ? '🔒 MODO SUSPENSO ACTIVADO (Tabla Oculta)' : '🔓 MODO SUSPENSO DESACTIVADO (Tabla Visible)');
+    }
   };
 
   // ================= ATLETAS =================
@@ -222,6 +236,18 @@ export default function AdminPage() {
       <h1 className="text-3xl md:text-4xl font-extrabold text-[#1a2b4c] mb-8 text-center uppercase tracking-tight">
         Panel de <span className="text-[#d91470]">Administración</span>
       </h1>
+
+      {/* BOTÓN MAESTRO: MODO SUSPENSO */}
+      <div className="max-w-4xl mx-auto flex justify-center mb-8">
+        <button 
+          onClick={handleToggleFreeze}
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all transform hover:scale-105 ${
+            isFrozen ? 'bg-[#d91470] shadow-[#d91470]/40' : 'bg-[#1a2b4c] shadow-[#1a2b4c]/40'
+          }`}
+        >
+          {isFrozen ? '🔒 Quitar Modo Suspenso (Mostrar Tabla)' : '🛑 Activar Modo Suspenso (Ocultar Tabla)'}
+        </button>
+      </div>
 
       {mensaje && (
         <div className="max-w-4xl mx-auto bg-[#27aae1] text-white p-4 rounded-xl mb-8 text-center font-bold shadow-lg animate-pulse">

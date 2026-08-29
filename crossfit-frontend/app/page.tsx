@@ -11,15 +11,20 @@ export default function HomePage() {
   const [activeGender, setActiveGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
   const [expandedAthlete, setExpandedAthlete] = useState<number | null>(null);
 
+  // ESTADO MODO SUSPENSO
+  const [isFrozen, setIsFrozen] = useState(false);
+
   const loadData = () => {
     Promise.all([
       fetch('https://competencias-ironbox-api.onrender.com/categories').then(res => res.json()),
       fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()),
-      fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json())
-    ]).then(([catsData, athsData, scoresData]) => {
+      fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json()),
+      fetch('https://competencias-ironbox-api.onrender.com/scores/freeze/status').then(res => res.json())
+    ]).then(([catsData, athsData, scoresData, freezeData]) => {
       setCategories(catsData);
       setAthletes(athsData);
       setScores(scoresData);
+      setIsFrozen(freezeData?.isFrozen || false);
     }).catch(error => console.error("Error cargando:", error));
   };
 
@@ -108,7 +113,20 @@ export default function HomePage() {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {leaderboard.length === 0 ? (
+            {isFrozen ? (
+              <div className="p-16 text-center bg-[#1a2b4c] text-white">
+                <div className="text-6xl mb-6">🤫</div>
+                <h2 className="text-2xl md:text-4xl font-black uppercase tracking-widest mb-4">
+                  Modo <span className="text-[#d91470]">Suspenso</span> Activado
+                </h2>
+                <p className="text-gray-300 md:text-lg max-w-lg mx-auto">
+                  Los resultados de esta categoría han sido ocultados temporalmente mientras se define la competencia.
+                </p>
+                <div className="mt-8 text-[#27aae1] font-bold uppercase tracking-[0.2em] animate-pulse">
+                  ¡Nos vemos en la premiación!
+                </div>
+              </div>
+            ) : leaderboard.length === 0 ? (
               <div className="p-8 text-center text-gray-400 italic font-medium">
                 Aún no hay atletas registrados en esta categoría.
               </div>
