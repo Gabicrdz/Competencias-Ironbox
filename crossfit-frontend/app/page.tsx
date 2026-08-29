@@ -11,7 +11,8 @@ export default function HomePage() {
   const [activeGender, setActiveGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
   const [expandedAthlete, setExpandedAthlete] = useState<number | null>(null);
 
-  useEffect(() => {
+  // NUEVO: Función de carga separada para poder llamarla repetidamente
+  const loadData = () => {
     Promise.all([
       fetch('https://competencias-ironbox-api.onrender.com/categories').then(res => res.json()),
       fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()),
@@ -20,10 +21,22 @@ export default function HomePage() {
       setCategories(catsData);
       setAthletes(athsData);
       setScores(scoresData);
-      
-      if (catsData.length > 0) setActiveCategoryId(catsData[0].id);
     }).catch(error => console.error("Error cargando:", error));
+  };
+
+  // NUEVO: Efecto de auto-refresco (cada 15 segundos)
+  useEffect(() => {
+    loadData(); // Carga inicial
+    const interval = setInterval(loadData, 15000); // 15000 milisegundos = 15 segs
+    return () => clearInterval(interval); // Limpia el reloj si cambias de página
   }, []);
+
+  // NUEVO: Asignar pestaña por defecto solo la primera vez que cargan las categorías
+  useEffect(() => {
+    if (categories.length > 0 && activeCategoryId === null) {
+      setActiveCategoryId(categories[0].id);
+    }
+  }, [categories, activeCategoryId]);
 
   const leaderboard = athletes
     .filter(a => a.categoryId === activeCategoryId && a.gender === activeGender)
@@ -41,8 +54,18 @@ export default function HomePage() {
       <div className="flex-grow p-4 md:p-8">
         
         {/* ENCABEZADO CON LOGOS */}
-        <div className="max-w-4xl mx-auto flex flex-col items-center mb-10 mt-4">
-          <div className="flex justify-center items-center gap-6 md:gap-12 mb-6 bg-white p-4 rounded-3xl shadow-md border-2 border-[#27aae1]/20">
+        <div className="max-w-4xl mx-auto flex flex-col items-center mb-10 mt-4 relative">
+          
+          {/* Indicador de "En vivo" */}
+          <div className="absolute top-0 right-0 flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-200">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">En Vivo</span>
+          </div>
+
+          <div className="flex justify-center items-center gap-6 md:gap-12 mb-6 bg-white p-4 rounded-3xl shadow-md border-2 border-[#27aae1]/20 mt-4 md:mt-0">
             <img src="/logo-ironbox.jpeg" alt="Iron Box" className="h-16 md:h-24 object-contain rounded-xl" />
             <div className="h-16 w-px bg-gray-300"></div>
             <img src="/logo-atodacosta.png" alt="A Toda Costa" className="h-20 md:h-28 object-contain" />
@@ -159,18 +182,9 @@ export default function HomePage() {
 
       {/* FOOTER ONDULADO (SVG) */}
       <div className="w-full mt-auto">
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 1440 320" 
-          className="w-full h-auto block -mb-1"
-        >
-          <path 
-            fill="#00a3a7" 
-            fillOpacity="1" 
-            d="M0,160L48,170.7C96,181,192,203,288,186.7C384,171,480,117,576,96C672,75,768,85,864,112C960,139,1056,181,1152,192C1248,203,1344,181,1392,170.7L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-          ></path>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full h-auto block -mb-1">
+          <path fill="#00a3a7" fillOpacity="1" d="M0,160L48,170.7C96,181,192,203,288,186.7C384,171,480,117,576,96C672,75,768,85,864,112C960,139,1056,181,1152,192C1248,203,1344,181,1392,170.7L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
         </svg>
-        {/* Relleno inferior extra celeste para pantallas grandes */}
         <div className="bg-[#00a3a7] h-8 md:h-16 w-full"></div>
       </div>
 
