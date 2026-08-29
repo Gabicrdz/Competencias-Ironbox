@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
 import { WodsService } from './wods.service';
 import { CreateWodDto } from './dto/create-wod.dto';
 
@@ -19,6 +19,12 @@ export class WodsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.wodsService.findOne(+id);
+  }
+
+// NUEVA RUTA PARA RECIBIR LA EDICIÓN
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateData: any) {
+    return this.wodsService.update(+id, updateData);
   }
 
   @Delete(':id')

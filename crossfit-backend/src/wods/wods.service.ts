@@ -18,6 +18,13 @@ export class WodsService {
     return this.prisma.wod.findUnique({ where: { id }, include: { category: true } });
   }
 
+  async update(id: number, data: any) {
+    return this.prisma.wod.update({
+      where: { id },
+      data,
+    });
+  }
+  
   async remove(id: number) {
     // Borrar primero los puntajes asociados para evitar errores
     await this.prisma.score.deleteMany({ where: { wodId: id } });

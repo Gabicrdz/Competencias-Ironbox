@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
 import { AthletesService } from './athletes.service';
 import { CreateAthleteDto } from './dto/create-athlete.dto';
 
@@ -19,6 +19,11 @@ export class AthletesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.athletesService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateData: any) {
+    return this.athletesService.update(+id, updateData);
   }
 
   @Delete(':id')
