@@ -8,12 +8,10 @@ export default function AdminPage() {
   const [wods, setWods] = useState<any[]>([]);
   const [scores, setScores] = useState<any[]>([]);
 
-  // ESTADOS DE FORMULARIO
   const [athleteForm, setAthleteForm] = useState({ fullName: '', boxName: '', gender: 'MASCULINO', categoryId: '' });
   const [wodForm, setWodForm] = useState({ name: '', description: '', type: 'TIME', categoryId: '' });
   const [scoreForm, setScoreForm] = useState({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
 
-  // NUEVO: ESTADOS DE EDICIÓN
   const [editingAthleteId, setEditingAthleteId] = useState<number | null>(null);
   const [editingWodId, setEditingWodId] = useState<number | null>(null);
   const [editingScoreId, setEditingScoreId] = useState<number | null>(null);
@@ -55,7 +53,7 @@ export default function AdminPage() {
     setTimeout(() => setMensaje(''), 3000);
   };
 
-  // ================= LÓGICA DE ATLETAS =================
+  // ================= ATLETAS =================
   const handleSubmitAthlete = async (e: React.FormEvent) => {
     e.preventDefault();
     const method = editingAthleteId ? 'PATCH' : 'POST';
@@ -75,10 +73,12 @@ export default function AdminPage() {
     });
 
     if (res.ok) {
-      mostrarMensaje(editingAthleteId ? '¡Atleta actualizado!' : '¡Atleta registrado!');
+      mostrarMensaje(editingAthleteId ? '¡Atleta actualizado correctamente!' : '¡Atleta registrado!');
       setAthleteForm({ fullName: '', boxName: '', gender: 'MASCULINO', categoryId: categories[0]?.id.toString() || '' });
       setEditingAthleteId(null);
       fetchData();
+    } else {
+      mostrarMensaje('Error al guardar el atleta.');
     }
   };
 
@@ -89,7 +89,7 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ================= LÓGICA DE WODS =================
+  // ================= WODS =================
   const handleSubmitWod = async (e: React.FormEvent) => {
     e.preventDefault();
     const method = editingWodId ? 'PATCH' : 'POST';
@@ -104,10 +104,12 @@ export default function AdminPage() {
     });
 
     if (res.ok) {
-      mostrarMensaje(editingWodId ? '¡WOD actualizado!' : '¡WOD creado!');
+      mostrarMensaje(editingWodId ? '¡WOD actualizado correctamente!' : '¡WOD creado!');
       setWodForm({ name: '', description: '', type: 'TIME', categoryId: categories[0]?.id.toString() || '' });
       setEditingWodId(null);
       fetchData();
+    } else {
+      mostrarMensaje('Error al guardar el WOD.');
     }
   };
 
@@ -118,7 +120,7 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ================= LÓGICA DE PUNTUACIONES =================
+  // ================= PUNTUACIONES =================
   const handleSubmitScore = async (e: React.FormEvent) => {
     e.preventDefault();
     const selectedWod = wods.find(w => w.id === Number(scoreForm.wodId));
@@ -138,11 +140,10 @@ export default function AdminPage() {
     const bodyData = {
       athleteId: Number(scoreForm.athleteId),
       wodId: Number(scoreForm.wodId),
-      resultValue, resultString
+      resultValue, 
+      resultString
     };
 
-    // TRUCO DE EDICIÓN: Si editamos un score, borramos el viejo y creamos uno nuevo 
-    // para forzar a la base de datos a recalcular todos los rankings correctamente.
     if (editingScoreId) {
       await fetch(`https://competencias-ironbox-api.onrender.com/scores/${editingScoreId}`, { method: 'DELETE' });
     }
@@ -154,10 +155,12 @@ export default function AdminPage() {
     });
 
     if (res.ok) {
-      mostrarMensaje(editingScoreId ? '¡Puntuación corregida y ranking actualizado!' : '¡Puntuación cargada con éxito!');
-      setScoreForm({ ...scoreForm, athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
+      mostrarMensaje(editingScoreId ? '¡Puntuación actualizada y ranking recalculado!' : '¡Puntuación cargada con éxito!');
+      setScoreForm({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
       setEditingScoreId(null);
       fetchData();
+    } else {
+      mostrarMensaje('Error al guardar la puntuación.');
     }
   };
 
@@ -195,7 +198,6 @@ export default function AdminPage() {
     if (res.ok) fetchData();
   };
 
-  // Filtrado general
   const currentWod = wods.find(w => w.id.toString() === scoreForm.wodId);
   const sortedAthletes = [...athletes].sort((a, b) => a.fullName.localeCompare(b.fullName));
   
@@ -206,13 +208,12 @@ export default function AdminPage() {
   });
   const filteredWods = wods.filter(w => w.categoryId.toString() === scoreFilter.categoryId);
 
-  // Filtrado del resumen inferior
   const summaryAthletes = sortedAthletes.filter(a => a.categoryId === activeSummaryCategoryId && a.gender === activeSummaryGender);
   const summaryWods = wods.filter(w => w.categoryId === activeSummaryCategoryId);
   const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId && s.athlete?.gender === activeSummaryGender);
 
   const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
-  const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-100 font-medium";
+  const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all font-medium";
   const labelClass = "text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider";
 
   return (
@@ -228,10 +229,9 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* FORMULARIOS PRINCIPALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-start max-w-7xl mx-auto">
         
-        {/* Formulario 1: Atleta */}
+        {/* Atleta Form */}
         <div className={`bg-white rounded-2xl shadow-xl overflow-hidden transition-all ${editingAthleteId ? 'border-2 border-yellow-400' : 'border border-gray-100'}`}>
             <button type="button" onClick={() => setShowAthleteForm(!showAthleteForm)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
               <h2 className="text-xl font-extrabold text-[#1a2b4c]">
@@ -276,7 +276,7 @@ export default function AdminPage() {
             )}
         </div>
 
-        {/* Formulario 2: WOD */}
+        {/* WOD Form */}
         <div className={`bg-white rounded-2xl shadow-xl overflow-hidden transition-all ${editingWodId ? 'border-2 border-yellow-400' : 'border border-gray-100'}`}>
             <button type="button" onClick={() => setShowWodForm(!showWodForm)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
               <h2 className="text-xl font-extrabold text-[#1a2b4c]">
@@ -322,7 +322,7 @@ export default function AdminPage() {
             )}
         </div>
 
-        {/* Formulario 3: Puntuación */}
+        {/* Score Form */}
         <div className={`bg-white rounded-2xl shadow-xl overflow-hidden transition-all ${editingScoreId ? 'border-2 border-yellow-400' : 'border-t-4 border-t-[#d91470]'}`}>
             <button type="button" onClick={() => setShowScoreForm(!showScoreForm)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
               <h2 className="text-xl font-extrabold text-[#1a2b4c]">
@@ -336,7 +336,7 @@ export default function AdminPage() {
                   <div className="flex gap-3">
                     <div className="w-1/2">
                       <label className={labelClass}>1. Género</label>
-                      <select className={selectClass} value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!!editingScoreId}>
+                      <select className={selectClass} value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
                         <option value="">Seleccionar...</option>
                         <option value="MASCULINO">🚹 Masculino</option>
                         <option value="FEMENINO">🚺 Femenino</option>
@@ -344,7 +344,7 @@ export default function AdminPage() {
                     </div>
                     <div className="w-1/2">
                       <label className={labelClass}>2. Categoría</label>
-                      <select className={selectClass} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!scoreFilter.gender || !!editingScoreId}>
+                      <select className={selectClass} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
                         <option value="">Seleccionar...</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
@@ -353,7 +353,7 @@ export default function AdminPage() {
 
                   <div>
                     <label className={labelClass}>3. Atleta</label>
-                    <select className={selectClass} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required disabled={!scoreFilter.categoryId || !!editingScoreId}>
+                    <select className={selectClass} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required>
                       <option value="">{scoreFilter.categoryId ? 'Seleccionar Atleta...' : 'Filtra arriba primero'}</option>
                       {filteredAthletes.map(a => <option key={a.id} value={a.id}>{a.fullName} {a.boxName ? `(${a.boxName})` : ''}</option>)}
                     </select>
@@ -361,7 +361,7 @@ export default function AdminPage() {
                   
                   <div>
                     <label className={labelClass}>4. Seleccionar WOD</label>
-                    <select className={selectClass} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required disabled={!scoreForm.athleteId || !!editingScoreId}>
+                    <select className={selectClass} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required>
                       <option value="">{scoreForm.athleteId ? 'Seleccionar WOD...' : 'Selecciona un atleta'}</option>
                       {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                     </select>
@@ -421,7 +421,7 @@ export default function AdminPage() {
       {/* LISTAS FILTRADAS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start">
         
-        {/* LISTA: ATLETAS */}
+        {/* Atletas */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowAthletesList(!showAthletesList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">🏃 Atletas <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryAthletes.length}</span></h3>
@@ -447,7 +447,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* LISTA: WODS */}
+        {/* WODs */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowWodsList(!showWodsList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">🏋️ WODs <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryWods.length}</span></h3>
@@ -477,7 +477,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* LISTA: PUNTUACIONES */}
+        {/* Puntuaciones */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <button onClick={() => setShowScoresList(!showScoresList)} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors">
             <h3 className="font-extrabold text-lg text-[#1a2b4c] flex items-center gap-2">📝 Puntuaciones <span className="bg-[#eaf5fa] text-[#27aae1] text-xs px-2 py-1 rounded-full">{summaryScores.length}</span></h3>
