@@ -11,8 +11,10 @@ export default function HomePage() {
   const [activeGender, setActiveGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
   const [expandedAthlete, setExpandedAthlete] = useState<number | null>(null);
 
-  // ESTADO MODO SUSPENSO
   const [isFrozen, setIsFrozen] = useState(false);
+  
+  // NUEVO: Estado para saber si está cargando
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadData = () => {
     Promise.all([
@@ -25,7 +27,13 @@ export default function HomePage() {
       setAthletes(athsData);
       setScores(scoresData);
       setIsFrozen(freezeData?.isFrozen || false);
-    }).catch(error => console.error("Error cargando:", error));
+      
+      // Apagamos la pantalla de carga cuando llegan los datos
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error cargando:", error);
+      setIsLoading(false);
+    });
   };
 
   useEffect(() => {
@@ -39,6 +47,25 @@ export default function HomePage() {
       setActiveCategoryId(categories[0].id);
     }
   }, [categories, activeCategoryId]);
+
+  // NUEVO: Si está cargando, mostramos esta pantalla a pantalla completa
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#eaf5fa] text-[#1a2b4c] font-sans p-4">
+        <div className="relative w-24 h-24 mb-8">
+          {/* Círculo giratorio */}
+          <div className="absolute inset-0 border-8 border-[#27aae1]/20 rounded-full"></div>
+          <div className="absolute inset-0 border-8 border-[#d91470] rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <h2 className="text-2xl md:text-3xl font-extrabold uppercase tracking-widest text-[#1a2b4c] mb-2 text-center">
+          Conectando
+        </h2>
+        <p className="text-gray-500 font-medium text-center animate-pulse">
+          Sincronizando base de datos oficial...
+        </p>
+      </div>
+    );
+  }
 
   const leaderboard = athletes
     .filter(a => a.categoryId === activeCategoryId && a.gender === activeGender)
