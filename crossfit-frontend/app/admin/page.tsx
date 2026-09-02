@@ -15,21 +15,26 @@ export default function AdminPage() {
   const [editingAthleteId, setEditingAthleteId] = useState<number | null>(null);
   const [editingWodId, setEditingWodId] = useState<number | null>(null);
   const [editingScoreId, setEditingScoreId] = useState<number | null>(null);
-  const [isFrozen, setIsFrozen] = useState(false);
+
   const [scoreFilter, setScoreFilter] = useState({ gender: '', categoryId: '' });
   const [mensaje, setMensaje] = useState('');
   const [expandedWodId, setExpandedWodId] = useState<number | null>(null);
+  
+  // NUEVO: Estado para expandir atletas en la tabla privada
+  const [expandedLeaderboardAthlete, setExpandedLeaderboardAthlete] = useState<number | null>(null);
 
   const [showAthleteForm, setShowAthleteForm] = useState(false); 
   const [showWodForm, setShowWodForm] = useState(false);       
   const [showScoreForm, setShowScoreForm] = useState(true);    
 
-  const [showAthletesList, setShowAthletesList] = useState(true);
-  const [showWodsList, setShowWodsList] = useState(true);
-  const [showScoresList, setShowScoresList] = useState(true);
+  const [showAthletesList, setShowAthletesList] = useState(false);
+  const [showWodsList, setShowWodsList] = useState(false);
+  const [showScoresList, setShowScoresList] = useState(false);
 
   const [activeSummaryCategoryId, setActiveSummaryCategoryId] = useState<number | null>(null);
   const [activeSummaryGender, setActiveSummaryGender] = useState<'MASCULINO' | 'FEMENINO'>('MASCULINO');
+  
+  const [isFrozen, setIsFrozen] = useState(false);
 
   const fetchData = () => {
     fetch('https://competencias-ironbox-api.onrender.com/categories').then(res => res.json())
@@ -41,10 +46,10 @@ export default function AdminPage() {
           if (!activeSummaryCategoryId) setActiveSummaryCategoryId(data[0].id);
         }
       }).catch(() => {});
-    fetch('https://competencias-ironbox-api.onrender.com/scores/freeze/status').then(res => res.json()).then(data => setIsFrozen(data.isFrozen)).catch(() => {});  
     fetch('https://competencias-ironbox-api.onrender.com/athletes').then(res => res.json()).then(data => setAthletes(data)).catch(() => {});
     fetch('https://competencias-ironbox-api.onrender.com/wods').then(res => res.json()).then(data => setWods(data)).catch(() => {});
     fetch('https://competencias-ironbox-api.onrender.com/scores').then(res => res.json()).then(data => setScores(data)).catch(() => {});
+    fetch('https://competencias-ironbox-api.onrender.com/scores/freeze/status').then(res => res.json()).then(data => setIsFrozen(data.isFrozen)).catch(() => {});
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -63,7 +68,7 @@ export default function AdminPage() {
     });
     if (res.ok) {
       setIsFrozen(newStatus);
-      mostrarMensaje(newStatus ? '🔒 MODO SUSPENSO ACTIVADO (Tabla Oculta)' : '🔓 MODO SUSPENSO DESACTIVADO (Tabla Visible)');
+      mostrarMensaje(newStatus ? '🔒 MODO SUSPENSO ACTIVADO (Tabla Pública Oculta)' : '🔓 MODO SUSPENSO DESACTIVADO (Tabla Pública Visible)');
     }
   };
 
@@ -91,8 +96,6 @@ export default function AdminPage() {
       setAthleteForm({ fullName: '', boxName: '', gender: 'MASCULINO', categoryId: categories[0]?.id.toString() || '' });
       setEditingAthleteId(null);
       fetchData();
-    } else {
-      mostrarMensaje('Error al guardar el atleta.');
     }
   };
 
@@ -122,8 +125,6 @@ export default function AdminPage() {
       setWodForm({ name: '', description: '', type: 'TIME', categoryId: categories[0]?.id.toString() || '' });
       setEditingWodId(null);
       fetchData();
-    } else {
-      mostrarMensaje('Error al guardar el WOD.');
     }
   };
 
@@ -173,8 +174,6 @@ export default function AdminPage() {
       setScoreForm({ athleteId: '', wodId: '', minutes: '', seconds: '', result: '', observations: '' });
       setEditingScoreId(null);
       fetchData();
-    } else {
-      mostrarMensaje('Error al guardar la puntuación.');
     }
   };
 
@@ -226,14 +225,21 @@ export default function AdminPage() {
   const summaryWods = wods.filter(w => w.categoryId === activeSummaryCategoryId);
   const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId && s.athlete?.gender === activeSummaryGender);
 
+  // NUEVO: Calculadora de Leaderboard para la vista Admin
+  const adminLeaderboard = summaryAthletes.map(athlete => {
+    const athleteScores = scores.filter(s => s.athleteId === athlete.id);
+    const totalPoints = athleteScores.reduce((sum, currentScore) => sum + (currentScore.points || 0), 0);
+    return { ...athlete, totalPoints, athleteScores };
+  }).sort((a, b) => b.totalPoints - a.totalPoints);
+
   const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
   const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all font-medium";
   const labelClass = "text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider";
 
   return (
-    <div className="min-h-screen bg-[#eaf5fa] text-[#1a2b4c] p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#eaf5fa] text-[#1a2b4c] p-4 md:p-8 font-sans pb-20">
       
-      <h1 className="text-3xl md:text-4xl font-extrabold text-[#1a2b4c] mb-8 text-center uppercase tracking-tight">
+      <h1 className="text-3xl md:text-4xl font-extrabold text-[#1a2b4c] mb-6 text-center uppercase tracking-tight">
         Panel de <span className="text-[#d91470]">Administración</span>
       </h1>
 
@@ -241,11 +247,11 @@ export default function AdminPage() {
       <div className="max-w-4xl mx-auto flex justify-center mb-8">
         <button 
           onClick={handleToggleFreeze}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all transform hover:scale-105 ${
-            isFrozen ? 'bg-[#d91470] shadow-[#d91470]/40' : 'bg-[#1a2b4c] shadow-[#1a2b4c]/40'
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-black text-white uppercase tracking-widest shadow-lg transition-all transform hover:scale-105 ${
+            isFrozen ? 'bg-[#d91470] shadow-[#d91470]/40 border-2 border-red-300' : 'bg-[#1a2b4c] shadow-[#1a2b4c]/40'
           }`}
         >
-          {isFrozen ? '🔒 Quitar Modo Suspenso (Mostrar Tabla)' : '🛑 Activar Modo Suspenso (Ocultar Tabla)'}
+          {isFrozen ? '🔒 Quitar Modo Suspenso (Mostrar Público)' : '🛑 Activar Modo Suspenso (Ocultar Público)'}
         </button>
       </div>
 
@@ -362,7 +368,7 @@ export default function AdminPage() {
                   <div className="flex gap-3">
                     <div className="w-1/2">
                       <label className={labelClass}>1. Género</label>
-                      <select className={selectClass} value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
+                      <select className={selectClass} value={scoreFilter.gender} onChange={e => { setScoreFilter({ ...scoreFilter, gender: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!!editingScoreId}>
                         <option value="">Seleccionar...</option>
                         <option value="MASCULINO">🚹 Masculino</option>
                         <option value="FEMENINO">🚺 Femenino</option>
@@ -370,7 +376,7 @@ export default function AdminPage() {
                     </div>
                     <div className="w-1/2">
                       <label className={labelClass}>2. Categoría</label>
-                      <select className={selectClass} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required>
+                      <select className={selectClass} value={scoreFilter.categoryId} onChange={e => { setScoreFilter({ ...scoreFilter, categoryId: e.target.value }); setScoreForm({ ...scoreForm, athleteId: '', wodId: '' }); }} required disabled={!scoreFilter.gender || !!editingScoreId}>
                         <option value="">Seleccionar...</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
@@ -379,7 +385,7 @@ export default function AdminPage() {
 
                   <div>
                     <label className={labelClass}>3. Atleta</label>
-                    <select className={selectClass} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required>
+                    <select className={selectClass} value={scoreForm.athleteId} onChange={e => { setScoreForm({ ...scoreForm, athleteId: e.target.value, wodId: '', minutes: '', seconds: '', result: '' }); }} required disabled={!scoreFilter.categoryId || !!editingScoreId}>
                       <option value="">{scoreFilter.categoryId ? 'Seleccionar Atleta...' : 'Filtra arriba primero'}</option>
                       {filteredAthletes.map(a => <option key={a.id} value={a.id}>{a.fullName} {a.boxName ? `(${a.boxName})` : ''}</option>)}
                     </select>
@@ -387,7 +393,7 @@ export default function AdminPage() {
                   
                   <div>
                     <label className={labelClass}>4. Seleccionar WOD</label>
-                    <select className={selectClass} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required>
+                    <select className={selectClass} value={scoreForm.wodId} onChange={e => setScoreForm({...scoreForm, wodId: e.target.value, minutes: '', seconds: '', result: ''})} required disabled={!scoreForm.athleteId || !!editingScoreId}>
                       <option value="">{scoreForm.athleteId ? 'Seleccionar WOD...' : 'Selecciona un atleta'}</option>
                       {filteredWods.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                     </select>
@@ -432,7 +438,7 @@ export default function AdminPage() {
 
       {/* FILTROS Y RESUMEN */}
       <h2 className="text-2xl font-extrabold text-center mb-6 text-[#1a2b4c] uppercase tracking-wide">
-        Resumen de Datos Cargados
+        Gestión de Datos
       </h2>
       <div className="flex flex-wrap justify-center gap-3 mb-4 max-w-7xl mx-auto">
         {categories.map(category => (
@@ -445,7 +451,7 @@ export default function AdminPage() {
       </div>
       
       {/* LISTAS FILTRADAS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start mb-12">
         
         {/* Atletas */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -454,7 +460,7 @@ export default function AdminPage() {
             <span className="text-[#27aae1] text-xl">{showAthletesList ? '🔼' : '🔽'}</span>
           </button>
           {showAthletesList && (
-            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
+            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[400px] scrollbar-hide">
               <ul className="flex flex-col gap-2 mt-2">
                 {summaryAthletes.map(a => (
                   <li key={a.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
@@ -480,7 +486,7 @@ export default function AdminPage() {
             <span className="text-[#27aae1] text-xl">{showWodsList ? '🔼' : '🔽'}</span>
           </button>
           {showWodsList && (
-            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
+            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[400px] scrollbar-hide">
               <ul className="flex flex-col gap-2 mt-2">
                 {summaryWods.map(w => (
                   <li key={w.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col hover:border-[#27aae1]/30 transition">
@@ -510,7 +516,7 @@ export default function AdminPage() {
             <span className="text-[#27aae1] text-xl">{showScoresList ? '🔼' : '🔽'}</span>
           </button>
           {showScoresList && (
-            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[600px] scrollbar-hide">
+            <div className="p-5 pt-0 border-t border-gray-100 mt-2 overflow-auto max-h-[400px] scrollbar-hide">
               <ul className="flex flex-col gap-2 mt-2">
                 {summaryScores.map(s => (
                   <li key={s.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#27aae1]/30 transition">
@@ -532,6 +538,79 @@ export default function AdminPage() {
                 ))}
               </ul>
             </div>
+          )}
+        </div>
+      </div>
+
+      <hr className="border-gray-300 mb-8 max-w-7xl mx-auto" />
+
+      {/* ========================================================= */}
+      {/* NUEVA TABLA DE POSICIONES PRIVADA (VISIBLE SIEMPRE)       */}
+      {/* ========================================================= */}
+      <h2 className="text-2xl font-extrabold text-center mb-2 text-[#1a2b4c] uppercase tracking-wide">
+        🏆 Leaderboard Privado
+      </h2>
+      <p className="text-center text-gray-500 text-sm mb-8 italic">
+        Esta tabla se actualiza en vivo al cargar puntajes, ignorando el "Modo Suspenso".
+      </p>
+
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden mb-8">
+        <div className="grid grid-cols-12 gap-4 p-4 bg-[#1a2b4c] text-white text-xs md:text-sm font-bold uppercase tracking-wider">
+          <div className="col-span-2 md:col-span-1 text-center">POS</div>
+          <div className="col-span-6 md:col-span-5">ATLETA</div>
+          <div className="col-span-0 md:col-span-4 hidden md:block text-center">BOX</div>
+          <div className="col-span-4 md:col-span-2 text-right pr-4">TOTAL PTS</div>
+        </div>
+
+        <div className="divide-y divide-gray-100">
+          {adminLeaderboard.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 italic font-medium">
+              No hay atletas para mostrar en esta categoría y género.
+            </div>
+          ) : (
+            adminLeaderboard.map((athlete, index) => {
+              const position = index + 1;
+              const isExpanded = expandedLeaderboardAthlete === athlete.id;
+              
+              let posColor = "text-gray-400 font-bold";
+              if (position === 1) posColor = "text-[#d91470] font-black text-xl"; 
+              if (position === 2) posColor = "text-[#27aae1] font-bold text-lg";  
+              if (position === 3) posColor = "text-[#1a2b4c] font-bold text-lg";  
+
+              return (
+                <div key={athlete.id} className="flex flex-col">
+                  <div onClick={() => setExpandedLeaderboardAthlete(isExpanded ? null : athlete.id)} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-[#eaf5fa]/80 cursor-pointer transition-colors">
+                    <div className={`col-span-2 md:col-span-1 text-center ${posColor}`}>{position}º</div>
+                    <div className="col-span-6 md:col-span-5 font-bold text-[#1a2b4c] truncate">
+                      {athlete.fullName}
+                      <div className="md:hidden text-xs text-gray-500 font-normal mt-1">{athlete.boxName || 'Independiente'}</div>
+                    </div>
+                    <div className="col-span-0 md:col-span-4 hidden md:block text-center text-sm text-gray-500 font-medium">{athlete.boxName || 'Independiente'}</div>
+                    <div className="col-span-4 md:col-span-2 text-right pr-4 font-black text-[#27aae1] text-lg">{athlete.totalPoints}</div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="bg-gray-50 p-4 border-l-4 border-[#d91470] text-sm shadow-inner">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {athlete.athleteScores.length > 0 ? (
+                          athlete.athleteScores.map((score: any) => (
+                            <div key={score.id} className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm border border-gray-100">
+                              <div>
+                                <span className="text-[#1a2b4c] font-bold text-xs uppercase tracking-wider block mb-1">{score.wod?.name || 'WOD'}</span>
+                                <span className="text-gray-600">Res: <strong className="text-[#d91470]">{score.resultString}</strong> (Pos: {score.position}º)</span>
+                              </div>
+                              <div className="text-lg font-bold text-[#27aae1]">+{score.points} pts</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-400 italic col-span-2">Aún no tiene resultados cargados.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
