@@ -225,12 +225,23 @@ export default function AdminPage() {
   const summaryWods = wods.filter(w => w.categoryId === activeSummaryCategoryId);
   const summaryScores = scores.filter(s => s.wod?.categoryId === activeSummaryCategoryId && s.athlete?.gender === activeSummaryGender);
 
-  // NUEVO: Calculadora de Leaderboard para la vista Admin
-  const adminLeaderboard = summaryAthletes.map(athlete => {
-    const athleteScores = scores.filter(s => s.athleteId === athlete.id);
-    const totalPoints = athleteScores.reduce((sum, currentScore) => sum + (currentScore.points || 0), 0);
-    return { ...athlete, totalPoints, athleteScores };
-  }).sort((a, b) => b.totalPoints - a.totalPoints);
+ const adminLeaderboard = summaryAthletes.map(athlete => {
+  const athleteScores = scores.filter(s => s.athleteId === athlete.id);
+  const totalPoints = athleteScores.reduce((sum, currentScore) => sum + (currentScore.points || 0), 0);
+  return { ...athlete, totalPoints, athleteScores };
+}).sort((a, b) => {
+  if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+  
+  const posA = a.athleteScores.map((s: any) => s.position).sort((x: number, y: number) => x - y);
+  const posB = b.athleteScores.map((s: any) => s.position).sort((x: number, y: number) => x - y);
+  
+  for (let i = 0; i < Math.max(posA.length, posB.length); i++) {
+    const pA = posA[i] || 9999;
+    const pB = posB[i] || 9999;
+    if (pA !== pB) return pA - pB;
+  }
+  return a.fullName.localeCompare(b.fullName);
+});
 
   const inputClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] focus:ring-1 focus:ring-[#27aae1] outline-none transition-all";
   const selectClass = "w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a2b4c] focus:border-[#27aae1] outline-none transition-all font-medium";

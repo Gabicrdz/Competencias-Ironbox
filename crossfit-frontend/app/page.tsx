@@ -71,7 +71,27 @@ export default function HomePage() {
       const totalPoints = athleteScores.reduce((sum, currentScore) => sum + (currentScore.points || 0), 0);
       return { ...athlete, totalPoints, athleteScores };
     })
-    .sort((a, b) => b.totalPoints - a.totalPoints);
+    .sort((a, b) => {
+      // 1. Primero ordenamos por Puntos Totales (Mayor a menor)
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      
+      // 2. DESEMPATE OFICIAL CROSSFIT (Mejores posiciones en WODs)
+     const posA = a.athleteScores.map((s: any) => s.position).sort((x: number, y: number) => x - y);
+     const posB = b.athleteScores.map((s: any) => s.position).sort((x: number, y: number) => x - y);
+      
+      for (let i = 0; i < Math.max(posA.length, posB.length); i++) {
+        const pA = posA[i] || 9999; // Si a un atleta le falta un WOD, pierde el desempate
+        const pB = posB[i] || 9999;
+        if (pA !== pB) {
+          return pA - pB; // Gana el que tenga el número más bajo (ej: 1º le gana a 2º)
+        }
+      }
+      
+      // 3. Si tienen exactamente las mismas posiciones en todo, orden alfabético
+      return a.fullName.localeCompare(b.fullName);
+    });
 
   return (
     <div className="min-h-screen flex flex-col bg-[#eaf5fa] text-[#1a2b4c] font-sans">
